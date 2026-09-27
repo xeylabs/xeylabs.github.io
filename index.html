@@ -9,325 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    /* ===== Loud minimal · lab index — ink on paper, one accent ===== */
-    :root {
-      --paper: #F4F3EE;
-      --ink: #101210;
-      --line: #D9D7CE;
-      --mut: #55584F;
-      --lime: #C6F531;
-      --font-d: 'Archivo', 'Arial Black', sans-serif;
-      --font-m: 'IBM Plex Mono', 'Courier New', monospace;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body { overflow-x: clip; }
-
-    body {
-      background: var(--paper);
-      color: var(--ink);
-      font-family: var(--font-d);
-      font-size: 1rem;
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    ::selection { background: var(--lime); color: var(--ink); }
-
-    a { color: inherit; cursor: pointer; }
-
-    :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-
-    .skip-link {
-      position: absolute; left: -9999px; top: 0; z-index: 100;
-      background: var(--ink); color: var(--paper);
-      padding: 0.5rem 1rem; font-family: var(--font-m); font-size: 0.8125rem;
-    }
-    .skip-link:focus { left: 0; top: 0; }
-
-    .mono {
-      font-family: var(--font-m); font-size: 0.75rem; font-weight: 500;
-      letter-spacing: 0.08em; text-transform: uppercase;
-    }
-
-    .frame {
-      max-width: 1240px;
-      margin-inline: auto;
-      border-inline: 1px solid var(--line);
-    }
-    @media (max-width: 1240px) { .frame { border-inline: 0; } }
-
-    /* ===== Top bar ===== */
-    .topbar {
-      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-      gap: 0.75rem 2rem;
-      padding: 1rem 2rem;
-      border-bottom: 1px solid var(--line);
-    }
-    .topbar .mono a {
-      text-decoration: none; color: var(--mut);
-      margin-left: 1.5rem;
-      transition: color 120ms ease;
-    }
-    .topbar .mono a:hover { color: var(--ink); }
-    .topbar .mono strong { color: var(--ink); font-weight: 600; }
-    @media (max-width: 860px) { .topbar .mono a { margin-left: 1rem; } }
-    @media (max-width: 640px) { .topbar .mono .nav-opt { display: none; } }
-
-    /* ===== Hero ===== */
-    .hero { padding: 3.5rem 2rem 0; }
-    .hero-kicker {
-      display: flex; justify-content: space-between; gap: 1rem;
-      color: var(--mut);
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 1rem;
-    }
-    .hero h1 {
-      font-weight: 900;
-      font-size: clamp(2.6rem, 11.5vw, 9.5rem);
-      line-height: 0.92;
-      letter-spacing: -0.035em;
-      text-transform: uppercase;
-      padding-block: 2.5rem 2rem;
-    }
-    .hero h1 .outline {
-      color: transparent;
-      -webkit-text-stroke: 2.5px var(--ink);
-    }
-    .hero h1 .tick { color: var(--ink); }
-    .hero-low {
-      display: grid;
-      grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
-      gap: 2rem;
-      padding-block: 0 3rem;
-      align-items: end;
-    }
-    .hero-low .mono { color: var(--mut); line-height: 2; }
-    .hero-low p {
-      font-size: 1.25rem; font-weight: 500; line-height: 1.45;
-      max-width: 34rem; justify-self: end;
-    }
-    .hero-low p strong { font-weight: 700; }
-    @media (max-width: 860px) {
-      .hero-low { grid-template-columns: 1fr; }
-      .hero-low p { justify-self: start; }
-    }
-
-    /* ===== Ticker ===== */
-    .ticker { border-block: 1px solid var(--ink); overflow: hidden; }
-    .ticker-track {
-      display: flex; width: max-content;
-      animation: tick 30s linear infinite;
-    }
-    .ticker-group {
-      display: flex; align-items: center; gap: 2.25rem;
-      padding: 0.625rem 1.125rem 0.625rem 2.25rem;
-      font-family: var(--font-m); font-size: 0.8125rem; font-weight: 500;
-      letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
-    }
-    .ticker-group .star { color: var(--ink); }
-    .ticker-group em {
-      font-style: normal; background: var(--lime); padding: 0.0625rem 0.375rem;
-    }
-    @keyframes tick { to { transform: translateX(-50%); } }
-
-    /* ===== Sections ===== */
-    section { scroll-margin-top: 1.5rem; }
-    .section { padding: 4.5rem 2rem 5rem; }
-    .sec-head {
-      display: flex; align-items: baseline; gap: 1.5rem;
-      border-bottom: 1px solid var(--ink);
-      padding-bottom: 1rem;
-      margin-bottom: 0;
-    }
-    .sec-head .idx { font-family: var(--font-m); font-size: 0.8125rem; font-weight: 600; color: var(--mut); }
-    .sec-head h2 {
-      font-size: clamp(1.875rem, 4.5vw, 3rem);
-      font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase;
-      line-height: 1;
-    }
-    .sec-head .mono { margin-left: auto; color: var(--mut); }
-    @media (max-width: 640px) { .sec-head .mono { display: none; } }
-
-    /* ===== 01 — Tracks (rows, not cards) ===== */
-    .row {
-      display: grid;
-      grid-template-columns: 5rem minmax(0, 5fr) minmax(0, 6fr) 2.5rem;
-      gap: 1.5rem;
-      align-items: baseline;
-      padding: 1.75rem 0.75rem;
-      border-bottom: 1px solid var(--line);
-      transition: background-color 120ms ease;
-    }
-    .row:hover { background: var(--lime); }
-    .row .no { font-family: var(--font-m); font-size: 0.8125rem; color: var(--mut); }
-    .row:hover .no { color: var(--ink); }
-    .row h3 {
-      font-size: clamp(1.375rem, 2.6vw, 2rem);
-      font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase;
-      line-height: 1.05;
-    }
-    .row p { color: var(--mut); font-size: 1rem; max-width: 36rem; }
-    .row:hover p { color: var(--ink); }
-    .row .arr { justify-self: end; align-self: center; opacity: 0; transition: opacity 120ms ease; }
-    .row:hover .arr { opacity: 1; }
-    @media (max-width: 860px) {
-      .row { grid-template-columns: 3.5rem 1fr; }
-      .row p { grid-column: 2; }
-      .row .arr { display: none; }
-    }
-
-    /* ===== 02 — Project index (table) ===== */
-    .tbl-head, .trow {
-      display: grid;
-      grid-template-columns: 4rem minmax(0, 1fr) 9rem 8rem;
-      gap: 1.25rem;
-      align-items: center;
-    }
-    .tbl-head {
-      padding: 0.875rem 0.75rem;
-      color: var(--mut);
-      border-bottom: 1px solid var(--ink);
-    }
-    .trow {
-      padding: 1.375rem 0.75rem;
-      border-bottom: 1px solid var(--line);
-      text-decoration: none;
-      transition: background-color 120ms ease;
-    }
-    .trow:hover { background: var(--lime); }
-    .trow .no { font-family: var(--font-m); font-size: 0.8125rem; color: var(--mut); }
-    .trow:hover .no { color: var(--ink); }
-    .trow .ttl { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; }
-    .trow .st {
-      font-family: var(--font-m); font-size: 0.75rem; font-weight: 500;
-      letter-spacing: 0.08em; text-transform: uppercase; color: var(--mut);
-      display: inline-flex; align-items: center; gap: 0.5rem;
-    }
-    .trow:hover .st { color: var(--ink); }
-    .trow .st::before {
-      content: ""; width: 0.4375rem; height: 0.4375rem; border-radius: 50%;
-      background: var(--ink);
-    }
-    .trow .st.queued::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--mut); }
-    .trow:hover .st.queued::before { box-shadow: inset 0 0 0 1.5px var(--ink); }
-    .trow .lnk {
-      font-family: var(--font-m); font-size: 0.75rem; font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase; text-align: right;
-      display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem;
-    }
-    .trow-cta {
-      background: var(--ink); color: var(--paper);
-      border-bottom: 1px solid var(--ink);
-    }
-    .trow-cta .no, .trow-cta .st { color: var(--paper); }
-    .trow-cta:hover { background: var(--lime); color: var(--ink); }
-    .trow-cta:hover .no, .trow-cta:hover .st { color: var(--ink); }
-    .trow-cta:hover .st.queued::before { box-shadow: inset 0 0 0 1.5px var(--ink); }
-    .tbl-note { padding: 1rem 0.75rem 0; color: var(--mut); }
-    @media (max-width: 760px) {
-      .tbl-head { display: none; }
-      .trow { grid-template-columns: 3rem 1fr auto; }
-      .trow .st { display: none; }
-    }
-
-    /* ===== 03 — Manifesto ===== */
-    .mani {
-      display: grid;
-      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
-      gap: 2rem;
-      padding-top: 3rem;
-    }
-    .mani .mono { color: var(--mut); }
-    .mani-state {
-      font-size: clamp(1.75rem, 3.8vw, 3rem);
-      font-weight: 700; line-height: 1.15; letter-spacing: -0.02em;
-      max-width: 56rem;
-    }
-    .mani-state mark {
-      background: var(--lime); color: var(--ink);
-      padding: 0 0.2em;
-    }
-    .principles {
-      grid-column: 2;
-      margin-top: 2.5rem;
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
-    }
-    .principle { border-top: 1px solid var(--ink); padding-top: 0.875rem; }
-    .principle .mono { color: var(--ink); display: block; }
-    .principle h3 {
-      font-size: 1.125rem; font-weight: 700; text-transform: uppercase;
-      margin-top: 0.375rem; letter-spacing: -0.01em;
-    }
-    .principle p { margin-top: 0.375rem; color: var(--mut); font-size: 0.9375rem; }
-    @media (max-width: 860px) {
-      .mani { grid-template-columns: 1fr; }
-      .principles { grid-column: 1; grid-template-columns: 1fr; gap: 1.5rem; }
-    }
-
-    /* ===== Say hi ===== */
-    .sayhi { padding: 5rem 2rem 4rem; }
-    .sayhi a.big {
-      display: inline-block;
-      font-size: clamp(3.5rem, 12vw, 9rem);
-      font-weight: 900; letter-spacing: -0.035em; line-height: 0.95;
-      text-transform: uppercase; text-decoration: none;
-      padding: 0 0.1em;
-      transition: background-color 120ms ease, color 120ms ease;
-    }
-    .sayhi a.big:hover { background: var(--lime); color: var(--ink); }
-    .sayhi-rows { margin-top: 2.5rem; border-top: 1px solid var(--ink); }
-    .sayhi-rows a {
-      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
-      padding: 1.125rem 0.75rem;
-      border-bottom: 1px solid var(--line);
-      font-family: var(--font-m); font-size: 0.9375rem; font-weight: 500;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      text-decoration: none;
-      transition: background-color 120ms ease;
-    }
-    .sayhi-rows a:hover { background: var(--lime); }
-    .sayhi-rows a span:last-child { color: var(--mut); }
-    .sayhi-rows a:hover span:last-child { color: var(--ink); }
-
-    /* ===== Footer ===== */
-    footer { border-top: 1px solid var(--ink); }
-    .foot-row {
-      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 2rem;
-      padding: 1rem 2rem;
-      color: var(--mut);
-    }
-    .foot-row a { color: var(--mut); text-decoration: none; }
-    .foot-row a:hover { color: var(--ink); }
-    .wordmark-clip {
-      overflow: hidden; height: clamp(4.5rem, 13.5vw, 12rem);
-      padding: 0 0.5rem;
-    }
-    .wordmark {
-      font-size: clamp(5rem, 14.2vw, 13rem);
-      font-weight: 900; letter-spacing: -0.04em; line-height: 0.8;
-      text-transform: uppercase; white-space: nowrap;
-      transform: translateY(10%);
-      color: var(--ink);
-    }
-    .wordmark .dot { color: transparent; -webkit-text-stroke: 2px var(--ink); }
-
-    /* ===== Reveal ===== */
-    .reveal {
-      opacity: 0; transform: translateY(12px);
-      transition: opacity 350ms cubic-bezier(0.22, 0.61, 0.36, 1),
-                  transform 350ms cubic-bezier(0.22, 0.61, 0.36, 1);
-      transition-delay: var(--d, 0ms);
-    }
-    .reveal.in { opacity: 1; transform: none; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .reveal { opacity: 1; transform: none; transition: none; }
-      .ticker-track { animation: none; }
-    }
-  </style>
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -339,7 +21,9 @@
         <span class="nav-opt">EST.2026 / ID</span>
         <a href="#focus">FOCUS</a>
         <a href="#projects">PROJECTS</a>
+        <a href="#log">LOG</a>
         <a href="#about">ABOUT</a>
+        <a href="#contact">CONTACT</a>
         <!-- TODO: ganti dengan URL org GitHub XEY Labs yang sebenarnya -->
         <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
       </span>
@@ -354,7 +38,7 @@
         <h1 class="reveal">
           RESEARCH.<br>
           PROTOTYPE.<br>
-          <span class="outline">SHIP.<span class="tick" aria-hidden="true"></span></span>
+          <span class="outline">SHIP.</span>
         </h1>
         <div class="hero-low">
           <p class="mono">
@@ -480,9 +164,39 @@
         </div>
       </section>
 
+      <section class="section" id="log" aria-labelledby="log-title" style="padding-top: 0;">
+        <div class="sec-head reveal">
+          <span class="idx">04</span>
+          <h2 id="log-title">The log</h2>
+          <span class="mono">WRITING / NOTES</span>
+        </div>
+        <div class="tbl-head mono" aria-hidden="true">
+          <span>NO.</span><span>TITLE</span><span>DATE</span><span style="text-align:right;">READ</span>
+        </div>
+        <a class="trow reveal" href="blog/hello-lab.html">
+          <span class="no">001</span>
+          <span class="ttl">Hello, lab.</span>
+          <span class="st">27.09.2026</span>
+          <span class="lnk">READ ↗</span>
+        </a>
+        <div class="trow is-draft reveal">
+          <span class="no">002</span>
+          <span class="ttl">Why we build in public</span>
+          <span class="st queued">Draft</span>
+          <span class="lnk" style="color: var(--mut);">SOON</span>
+        </div>
+        <div class="trow is-draft reveal">
+          <span class="no">003</span>
+          <span class="ttl">Notes from the first experiments</span>
+          <span class="st queued">Draft</span>
+          <span class="lnk" style="color: var(--mut);">SOON</span>
+        </div>
+        <p class="tbl-note mono">THE LOG IS WHERE THE LAB THINKS OUT LOUD. <a href="blog/index.html" style="color: var(--ink);">ALL ENTRIES ↗</a></p>
+      </section>
+
       <section class="sayhi" id="contact" aria-labelledby="contact-title">
         <p class="mono" style="color: var(--mut); border-bottom: 1px solid var(--ink); padding-bottom: 1rem;">
-          <span class="idx" aria-hidden="true">04</span> — CONTACT
+          <span class="idx" aria-hidden="true">05</span> — CONTACT
         </p>
         <h2 id="contact-title" class="sr-only" style="position:absolute;left:-9999px;">Contact</h2>
         <!-- TODO: ganti email di bawah dengan email asli -->

@@ -9,7 +9,18 @@ Built from the [UI/UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max
 - **Type:** Archivo 900 (display) · IBM Plex Mono (labels & meta)
 - **Motion:** 350ms subtle reveal + marquee ticker, `prefers-reduced-motion` respected
 
-Zero dependencies — a single `index.html`, no build step.
+Zero dependencies — static HTML + one shared stylesheet, no build step.
+
+## Structure
+
+```
+index.html            landing page
+blog/index.html       the log — entry index
+blog/hello-lab.html   first post ("Hello, lab.")
+assets/style.css      shared stylesheet (design system)
+```
+
+**Menambah post baru:** copy `blog/hello-lab.html`, ubah konten + judul, terus tambahin satu baris `<a class="trow">` di `index.html` (section `#log`) dan `blog/index.html`.
 
 ## Edit me
 
