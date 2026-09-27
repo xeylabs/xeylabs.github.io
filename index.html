@@ -4,386 +4,319 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XEY Labs — Independent Research & Technology Lab</title>
-  <meta name="description" content="XEY Labs is an independent technology lab exploring software, tools, and experiments — from first sketch to working product.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='13' height='13' rx='3' fill='%232563EB'/%3E%3Crect x='17' y='2' width='13' height='13' rx='3' fill='%232563EB'/%3E%3Crect x='2' y='17' width='13' height='13' rx='3' fill='%232563EB'/%3E%3Crect x='17' y='17' width='13' height='13' rx='3' fill='%23EA580C'/%3E%3C/svg%3E">
+  <meta name="description" content="XEY Labs is an independent technology lab. Small, fast experiments until something sticks — then we ship it in public.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* ===== Design tokens — UI/UX Pro Max · Minimalism & Swiss Style · XEY Labs ===== */
+    /* ===== Loud minimal · lab index — ink on paper, one accent ===== */
     :root {
-      --color-background: #F8FAFC;
-      --color-foreground: #1E293B;
-      --color-card: #FFFFFF;
-      --color-card-foreground: #1E293B;
-      --color-muted: #E9EFF8;
-      --color-muted-foreground: #475569;
-      --color-border: #E2E8F0;
-      --color-primary: #2563EB;
-      --color-on-primary: #FFFFFF;
-      --color-primary-soft: #EFF6FF;
-      --color-secondary: #3B82F6;
-      --color-accent: #EA580C;
-      --color-on-accent: #000000;
-      --color-accent-soft: #FFF7ED;
-      --color-accent-strong: #9A3412;
-      --color-ring: #2563EB;
-      --font-sans: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-      --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.07);
-      --shadow-lg: 0 10px 15px rgba(15, 23, 42, 0.1);
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --container: 75rem;
+      --paper: #F4F3EE;
+      --ink: #101210;
+      --line: #D9D7CE;
+      --mut: #55584F;
+      --lime: #C6F531;
+      --font-d: 'Archivo', 'Arial Black', sans-serif;
+      --font-m: 'IBM Plex Mono', 'Courier New', monospace;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; }
+    html, body { overflow-x: clip; }
 
     body {
-      background: var(--color-background);
-      color: var(--color-foreground);
-      font-family: var(--font-sans);
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-d);
       font-size: 1rem;
-      line-height: 1.6;
+      line-height: 1.55;
       -webkit-font-smoothing: antialiased;
     }
 
-    ::selection { background: var(--color-primary); color: var(--color-on-primary); }
+    ::selection { background: var(--lime); color: var(--ink); }
 
-    a { color: inherit; }
-    button { font: inherit; }
+    a { color: inherit; cursor: pointer; }
 
-    :focus-visible {
-      outline: 2px solid var(--color-ring);
-      outline-offset: 2px;
-      border-radius: 4px;
-    }
+    :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
     .skip-link {
-      position: absolute; left: -9999px; top: 0;
-      background: var(--color-primary); color: var(--color-on-primary);
-      padding: 0.5rem 1rem; z-index: 100;
-      font-weight: 600; border-radius: 0 0 var(--radius-sm) 0;
+      position: absolute; left: -9999px; top: 0; z-index: 100;
+      background: var(--ink); color: var(--paper);
+      padding: 0.5rem 1rem; font-family: var(--font-m); font-size: 0.8125rem;
     }
     .skip-link:focus { left: 0; top: 0; }
 
-    .container {
-      max-width: var(--container);
-      margin-inline: auto;
-      padding-inline: 1.5rem;
+    .mono {
+      font-family: var(--font-m); font-size: 0.75rem; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase;
     }
 
-    /* ===== Nav ===== */
-    .nav {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(248, 250, 252, 0.85);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--color-border);
+    .frame {
+      max-width: 1240px;
+      margin-inline: auto;
+      border-inline: 1px solid var(--line);
     }
-    .nav-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      padding-block: 0.875rem;
+    @media (max-width: 1240px) { .frame { border-inline: 0; } }
+
+    /* ===== Top bar ===== */
+    .topbar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 0.75rem 2rem;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--line);
     }
-    .brand {
-      display: flex; align-items: center; gap: 0.625rem;
-      text-decoration: none; cursor: pointer;
+    .topbar .mono a {
+      text-decoration: none; color: var(--mut);
+      margin-left: 1.5rem;
+      transition: color 120ms ease;
     }
-    .brand-mark { display: block; }
-    .brand-name {
-      font-weight: 800; font-size: 1.125rem;
-      letter-spacing: -0.01em; color: var(--color-foreground);
-    }
-    .brand-name span { color: var(--color-primary); }
-    .nav-links { display: flex; align-items: center; gap: 1.75rem; list-style: none; }
-    .nav-links a:not(.nav-github) {
-      text-decoration: none; color: var(--color-muted-foreground);
-      font-size: 0.9375rem; font-weight: 600;
-      transition: color 200ms ease;
-      cursor: pointer;
-    }
-    .nav-links a:not(.nav-github):hover { color: var(--color-foreground); }
-    .nav-github {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      text-decoration: none; cursor: pointer;
-      background: var(--color-foreground); color: #FFFFFF;
-      font-size: 0.875rem; font-weight: 600;
-      padding: 0.5rem 1rem; border-radius: 999px;
-      transition: background-color 200ms ease, transform 200ms ease;
-    }
-    .nav-github:hover { background: #334155; transform: translateY(-1px); }
+    .topbar .mono a:hover { color: var(--ink); }
+    .topbar .mono strong { color: var(--ink); font-weight: 600; }
+    @media (max-width: 860px) { .topbar .mono a { margin-left: 1rem; } }
+    @media (max-width: 640px) { .topbar .mono .nav-opt { display: none; } }
 
     /* ===== Hero ===== */
-    .hero {
-      position: relative;
-      padding-block: 6rem 5.5rem;
-      text-align: center;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: "";
-      position: absolute; inset: 0;
-      background-image: radial-gradient(rgba(37, 99, 235, 0.14) 1px, transparent 1px);
-      background-size: 26px 26px;
-      mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
-      pointer-events: none;
-    }
-    .hero-inner { position: relative; max-width: 52rem; margin-inline: auto; }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      background: var(--color-primary-soft);
-      color: #1D4ED8;
-      border: 1px solid #BFDBFE;
-      font-size: 0.8125rem; font-weight: 600;
-      padding: 0.375rem 0.875rem; border-radius: 999px;
-    }
-    .hero-badge::before {
-      content: ""; width: 0.4375rem; height: 0.4375rem; border-radius: 50%;
-      background: var(--color-primary);
+    .hero { padding: 3.5rem 2rem 0; }
+    .hero-kicker {
+      display: flex; justify-content: space-between; gap: 1rem;
+      color: var(--mut);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 1rem;
     }
     .hero h1 {
-      margin-top: 1.5rem;
-      font-size: clamp(2.5rem, 6vw, 4.25rem);
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -0.025em;
+      font-weight: 900;
+      font-size: clamp(2.6rem, 11.5vw, 9.5rem);
+      line-height: 0.92;
+      letter-spacing: -0.035em;
+      text-transform: uppercase;
+      padding-block: 2.5rem 2rem;
     }
-    .hero h1 .highlight { color: var(--color-primary); }
-    .hero-sub {
-      margin-top: 1.375rem;
-      max-width: 38rem;
-      margin-inline: auto;
-      color: var(--color-muted-foreground);
-      font-size: 1.1875rem;
-      font-weight: 400;
+    .hero h1 .outline {
+      color: transparent;
+      -webkit-text-stroke: 2.5px var(--ink);
     }
-    .hero-actions {
-      margin-top: 2.25rem;
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.875rem;
+    .hero h1 .tick { color: var(--ink); }
+    .hero-low {
+      display: grid;
+      grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
+      gap: 2rem;
+      padding-block: 0 3rem;
+      align-items: end;
     }
-    .hero-meta {
-      margin-top: 3rem;
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;
+    .hero-low .mono { color: var(--mut); line-height: 2; }
+    .hero-low p {
+      font-size: 1.25rem; font-weight: 500; line-height: 1.45;
+      max-width: 34rem; justify-self: end;
     }
-    .meta-chip {
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      color: var(--color-muted-foreground);
-      font-size: 0.8125rem; font-weight: 600;
-      letter-spacing: 0.04em;
-      padding: 0.3125rem 0.875rem; border-radius: 999px;
+    .hero-low p strong { font-weight: 700; }
+    @media (max-width: 860px) {
+      .hero-low { grid-template-columns: 1fr; }
+      .hero-low p { justify-self: start; }
     }
 
-    /* ===== Buttons ===== */
-    .btn {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      font-family: var(--font-sans); font-weight: 700; font-size: 0.9375rem;
-      border-radius: var(--radius-sm); text-decoration: none; cursor: pointer;
-      transition: background-color 200ms ease, border-color 200ms ease,
-                  box-shadow 200ms ease, transform 200ms ease;
-      border: 2px solid transparent;
+    /* ===== Ticker ===== */
+    .ticker { border-block: 1px solid var(--ink); overflow: hidden; }
+    .ticker-track {
+      display: flex; width: max-content;
+      animation: tick 30s linear infinite;
     }
-    .btn-primary {
-      background: var(--color-accent); color: var(--color-on-accent);
-      box-shadow: var(--shadow-sm);
+    .ticker-group {
+      display: flex; align-items: center; gap: 2.25rem;
+      padding: 0.625rem 1.125rem 0.625rem 2.25rem;
+      font-family: var(--font-m); font-size: 0.8125rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
     }
-    .btn-primary:hover {
-      background: #C2410C; transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
+    .ticker-group .star { color: var(--ink); }
+    .ticker-group em {
+      font-style: normal; background: var(--lime); padding: 0.0625rem 0.375rem;
     }
-    .btn-secondary {
-      background: transparent; color: var(--color-primary);
-      border-color: var(--color-primary);
-    }
-    .btn-secondary:hover { background: var(--color-primary-soft); transform: translateY(-1px); }
+    @keyframes tick { to { transform: translateX(-50%); } }
 
     /* ===== Sections ===== */
-    section { scroll-margin-top: 4.5rem; }
-    .section { padding-block: 4.5rem; }
-    .section-head { text-align: center; margin-bottom: 3rem; }
-    .section-kicker {
+    section { scroll-margin-top: 1.5rem; }
+    .section { padding: 4.5rem 2rem 5rem; }
+    .sec-head {
+      display: flex; align-items: baseline; gap: 1.5rem;
+      border-bottom: 1px solid var(--ink);
+      padding-bottom: 1rem;
+      margin-bottom: 0;
+    }
+    .sec-head .idx { font-family: var(--font-m); font-size: 0.8125rem; font-weight: 600; color: var(--mut); }
+    .sec-head h2 {
+      font-size: clamp(1.875rem, 4.5vw, 3rem);
+      font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase;
+      line-height: 1;
+    }
+    .sec-head .mono { margin-left: auto; color: var(--mut); }
+    @media (max-width: 640px) { .sec-head .mono { display: none; } }
+
+    /* ===== 01 — Tracks (rows, not cards) ===== */
+    .row {
+      display: grid;
+      grid-template-columns: 5rem minmax(0, 5fr) minmax(0, 6fr) 2.5rem;
+      gap: 1.5rem;
+      align-items: baseline;
+      padding: 1.75rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+      transition: background-color 120ms ease;
+    }
+    .row:hover { background: var(--lime); }
+    .row .no { font-family: var(--font-m); font-size: 0.8125rem; color: var(--mut); }
+    .row:hover .no { color: var(--ink); }
+    .row h3 {
+      font-size: clamp(1.375rem, 2.6vw, 2rem);
+      font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase;
+      line-height: 1.05;
+    }
+    .row p { color: var(--mut); font-size: 1rem; max-width: 36rem; }
+    .row:hover p { color: var(--ink); }
+    .row .arr { justify-self: end; align-self: center; opacity: 0; transition: opacity 120ms ease; }
+    .row:hover .arr { opacity: 1; }
+    @media (max-width: 860px) {
+      .row { grid-template-columns: 3.5rem 1fr; }
+      .row p { grid-column: 2; }
+      .row .arr { display: none; }
+    }
+
+    /* ===== 02 — Project index (table) ===== */
+    .tbl-head, .trow {
+      display: grid;
+      grid-template-columns: 4rem minmax(0, 1fr) 9rem 8rem;
+      gap: 1.25rem;
+      align-items: center;
+    }
+    .tbl-head {
+      padding: 0.875rem 0.75rem;
+      color: var(--mut);
+      border-bottom: 1px solid var(--ink);
+    }
+    .trow {
+      padding: 1.375rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+      text-decoration: none;
+      transition: background-color 120ms ease;
+    }
+    .trow:hover { background: var(--lime); }
+    .trow .no { font-family: var(--font-m); font-size: 0.8125rem; color: var(--mut); }
+    .trow:hover .no { color: var(--ink); }
+    .trow .ttl { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; }
+    .trow .st {
+      font-family: var(--font-m); font-size: 0.75rem; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--mut);
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .trow:hover .st { color: var(--ink); }
+    .trow .st::before {
+      content: ""; width: 0.4375rem; height: 0.4375rem; border-radius: 50%;
+      background: var(--ink);
+    }
+    .trow .st.queued::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--mut); }
+    .trow:hover .st.queued::before { box-shadow: inset 0 0 0 1.5px var(--ink); }
+    .trow .lnk {
+      font-family: var(--font-m); font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; text-align: right;
+      display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem;
+    }
+    .trow-cta {
+      background: var(--ink); color: var(--paper);
+      border-bottom: 1px solid var(--ink);
+    }
+    .trow-cta .no, .trow-cta .st { color: var(--paper); }
+    .trow-cta:hover { background: var(--lime); color: var(--ink); }
+    .trow-cta:hover .no, .trow-cta:hover .st { color: var(--ink); }
+    .trow-cta:hover .st.queued::before { box-shadow: inset 0 0 0 1.5px var(--ink); }
+    .tbl-note { padding: 1rem 0.75rem 0; color: var(--mut); }
+    @media (max-width: 760px) {
+      .tbl-head { display: none; }
+      .trow { grid-template-columns: 3rem 1fr auto; }
+      .trow .st { display: none; }
+    }
+
+    /* ===== 03 — Manifesto ===== */
+    .mani {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+      gap: 2rem;
+      padding-top: 3rem;
+    }
+    .mani .mono { color: var(--mut); }
+    .mani-state {
+      font-size: clamp(1.75rem, 3.8vw, 3rem);
+      font-weight: 700; line-height: 1.15; letter-spacing: -0.02em;
+      max-width: 56rem;
+    }
+    .mani-state mark {
+      background: var(--lime); color: var(--ink);
+      padding: 0 0.2em;
+    }
+    .principles {
+      grid-column: 2;
+      margin-top: 2.5rem;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;
+    }
+    .principle { border-top: 1px solid var(--ink); padding-top: 0.875rem; }
+    .principle .mono { color: var(--ink); display: block; }
+    .principle h3 {
+      font-size: 1.125rem; font-weight: 700; text-transform: uppercase;
+      margin-top: 0.375rem; letter-spacing: -0.01em;
+    }
+    .principle p { margin-top: 0.375rem; color: var(--mut); font-size: 0.9375rem; }
+    @media (max-width: 860px) {
+      .mani { grid-template-columns: 1fr; }
+      .principles { grid-column: 1; grid-template-columns: 1fr; gap: 1.5rem; }
+    }
+
+    /* ===== Say hi ===== */
+    .sayhi { padding: 5rem 2rem 4rem; }
+    .sayhi a.big {
       display: inline-block;
-      color: var(--color-primary);
-      font-size: 0.8125rem; font-weight: 700;
-      letter-spacing: 0.14em; text-transform: uppercase;
+      font-size: clamp(3.5rem, 12vw, 9rem);
+      font-weight: 900; letter-spacing: -0.035em; line-height: 0.95;
+      text-transform: uppercase; text-decoration: none;
+      padding: 0 0.1em;
+      transition: background-color 120ms ease, color 120ms ease;
     }
-    .section-title {
-      margin-top: 0.5rem;
-      font-size: clamp(1.875rem, 4vw, 2.5rem);
-      font-weight: 800; letter-spacing: -0.02em; line-height: 1.15;
+    .sayhi a.big:hover { background: var(--lime); color: var(--ink); }
+    .sayhi-rows { margin-top: 2.5rem; border-top: 1px solid var(--ink); }
+    .sayhi-rows a {
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      padding: 1.125rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--font-m); font-size: 0.9375rem; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      text-decoration: none;
+      transition: background-color 120ms ease;
     }
-    .section-sub {
-      margin-top: 0.75rem;
-      color: var(--color-muted-foreground);
-      font-size: 1.0625rem;
-      max-width: 36rem; margin-inline: auto;
-    }
+    .sayhi-rows a:hover { background: var(--lime); }
+    .sayhi-rows a span:last-child { color: var(--mut); }
+    .sayhi-rows a:hover span:last-child { color: var(--ink); }
 
-    /* ===== Features (What we do) ===== */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
+    /* ===== Footer ===== */
+    footer { border-top: 1px solid var(--ink); }
+    .foot-row {
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 2rem;
+      padding: 1rem 2rem;
+      color: var(--mut);
     }
-    .feature-card {
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: 1.75rem;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow 200ms ease, transform 200ms ease;
+    .foot-row a { color: var(--mut); text-decoration: none; }
+    .foot-row a:hover { color: var(--ink); }
+    .wordmark-clip {
+      overflow: hidden; height: clamp(4.5rem, 13.5vw, 12rem);
+      padding: 0 0.5rem;
     }
-    .feature-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .feature-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 2.75rem; height: 2.75rem;
-      background: var(--color-primary-soft);
-      border-radius: 10px;
-      color: var(--color-primary);
+    .wordmark {
+      font-size: clamp(5rem, 14.2vw, 13rem);
+      font-weight: 900; letter-spacing: -0.04em; line-height: 0.8;
+      text-transform: uppercase; white-space: nowrap;
+      transform: translateY(10%);
+      color: var(--ink);
     }
-    .feature-card h3 {
-      margin-top: 1.125rem;
-      font-size: 1.1875rem; font-weight: 700; letter-spacing: -0.01em;
-    }
-    .feature-card p { margin-top: 0.5rem; color: var(--color-muted-foreground); font-size: 0.9688rem; }
+    .wordmark .dot { color: transparent; -webkit-text-stroke: 2px var(--ink); }
 
-    /* ===== Projects ===== */
-    .projects-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-    }
-    .project-card {
-      display: flex; flex-direction: column; gap: 0.875rem;
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow 200ms ease, transform 200ms ease;
-    }
-    .project-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .project-top { display: flex; align-items: center; justify-content: space-between; }
-    .project-num {
-      font-size: 0.875rem; font-weight: 700; letter-spacing: 0.08em;
-      color: #94A3B8;
-    }
-    .status {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-      padding: 0.25rem 0.75rem; border-radius: 999px;
-      background: var(--color-accent-soft); color: var(--color-accent-strong);
-    }
-    .status::before {
-      content: ""; width: 0.375rem; height: 0.375rem; border-radius: 50%;
-      background: var(--color-accent);
-    }
-    .project-card h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; }
-    .project-card > p { color: var(--color-muted-foreground); font-size: 0.9688rem; flex: 1; }
-    .project-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .tag {
-      font-size: 0.8125rem; font-weight: 600; color: var(--color-muted-foreground);
-      background: #F1F5F9; border-radius: 6px;
-      padding: 0.1875rem 0.625rem;
-    }
-    .project-cta {
-      display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
-      gap: 0.75rem;
-      background: linear-gradient(135deg, #2563EB, #1D4ED8);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
-      text-decoration: none; cursor: pointer;
-      box-shadow: var(--shadow-md);
-      transition: box-shadow 200ms ease, transform 200ms ease;
-    }
-    .project-cta:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-    .project-cta h3 { color: #FFFFFF; font-size: 1.25rem; font-weight: 700; }
-    .project-cta p { color: rgba(255, 255, 255, 0.85); font-size: 0.9688rem; }
-    .project-cta .link-label {
-      color: #FFFFFF; font-weight: 700; font-size: 0.9375rem;
-      display: inline-flex; align-items: center; gap: 0.4rem;
-    }
-
-    /* ===== About ===== */
-    .about-panel {
-      background: var(--color-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-      padding: 3rem;
-      display: grid;
-      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-      gap: 3rem;
-    }
-    .about-lede {
-      font-size: clamp(1.25rem, 2.2vw, 1.5rem);
-      line-height: 1.5; font-weight: 600; letter-spacing: -0.01em;
-    }
-    .about-lede .highlight { color: var(--color-primary); }
-    .principles { display: flex; flex-direction: column; }
-    .principle {
-      display: grid; grid-template-columns: auto 1fr; gap: 1.125rem;
-      padding-block: 1.125rem;
-      border-bottom: 1px solid var(--color-border);
-    }
-    .principle:first-child { padding-top: 0; }
-    .principle:last-child { border-bottom: 0; padding-bottom: 0; }
-    .principle-num {
-      font-size: 0.875rem; font-weight: 800; color: var(--color-primary);
-      letter-spacing: 0.06em; padding-top: 0.1875rem;
-    }
-    .principle h3 { font-size: 1.0625rem; font-weight: 700; }
-    .principle p { margin-top: 0.25rem; color: var(--color-muted-foreground); font-size: 0.9375rem; }
-
-    /* ===== Contact / footer ===== */
-    .contact { padding-block: 4.5rem 5rem; }
-    .contact-inner {
-      background: linear-gradient(135deg, #2563EB, #1E40AF);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      padding: 4rem 2rem;
-      text-align: center;
-    }
-    .contact h2 {
-      color: #FFFFFF;
-      font-size: clamp(2rem, 4.5vw, 3rem);
-      font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
-    }
-    .contact p {
-      margin-top: 1rem;
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 1.125rem;
-      max-width: 32rem; margin-inline: auto;
-    }
-    .contact .hero-actions { margin-top: 2rem; }
-    .contact .btn-secondary {
-      color: #FFFFFF; border-color: rgba(255, 255, 255, 0.45);
-    }
-    .contact .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
-    .footer {
-      border-top: 1px solid var(--color-border);
-      padding-block: 1.5rem;
-    }
-    .footer-inner {
-      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-      gap: 1rem;
-      color: var(--color-muted-foreground); font-size: 0.875rem;
-    }
-    .footer-links { display: flex; gap: 1.5rem; list-style: none; }
-    .footer-links a {
-      color: var(--color-muted-foreground); text-decoration: none; font-weight: 600;
-      transition: color 200ms ease; cursor: pointer;
-    }
-    .footer-links a:hover { color: var(--color-foreground); }
-
-    /* ===== Reveal motion (Subtle tier: 300–400ms, small y offset) ===== */
+    /* ===== Reveal ===== */
     .reveal {
-      opacity: 0;
-      transform: translateY(12px);
+      opacity: 0; transform: translateY(12px);
       transition: opacity 350ms cubic-bezier(0.22, 0.61, 0.36, 1),
                   transform 350ms cubic-bezier(0.22, 0.61, 0.36, 1);
       transition-delay: var(--d, 0ms);
@@ -391,233 +324,194 @@
     .reveal.in { opacity: 1; transform: none; }
 
     @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
       .reveal { opacity: 1; transform: none; transition: none; }
-      .btn:hover, .feature-card:hover, .project-card:hover,
-      .project-cta:hover, .nav-github:hover { transform: none; }
-    }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 1024px) {
-      .features-grid { grid-template-columns: 1fr; max-width: 34rem; margin-inline: auto; }
-      .projects-grid { grid-template-columns: 1fr; max-width: 34rem; margin-inline: auto; }
-      .about-panel { grid-template-columns: 1fr; gap: 2rem; padding: 2.25rem; }
-    }
-    @media (max-width: 640px) {
-      .nav-links li:not(.nav-github-item) { display: none; }
-      .hero { padding-block: 4rem 4rem; }
-      .section { padding-block: 3.25rem; }
-      .about-panel { padding: 1.75rem; }
-      .contact-inner { padding: 3rem 1.5rem; }
-      .footer-inner { flex-direction: column; align-items: flex-start; }
+      .ticker-track { animation: none; }
     }
   </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <header class="nav">
-    <div class="container nav-inner">
-      <a class="brand" href="#top" aria-label="XEY Labs — back to top">
-        <svg class="brand-mark" width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
-          <rect x="2" y="2" width="13" height="13" rx="3" fill="#2563EB"/>
-          <rect x="17" y="2" width="13" height="13" rx="3" fill="#2563EB"/>
-          <rect x="2" y="17" width="13" height="13" rx="3" fill="#2563EB"/>
-          <rect x="17" y="17" width="13" height="13" rx="3" fill="#EA580C"/>
-        </svg>
-        <span class="brand-name">XEY&nbsp;<span>Labs</span></span>
-      </a>
-      <nav aria-label="Main navigation">
-        <ul class="nav-links">
-          <li><a href="#focus">Focus</a></li>
-          <li><a href="#projects">Projects</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#contact">Contact</a></li>
-          <li class="nav-github-item">
-            <!-- TODO: ganti dengan URL org GitHub XEY Labs yang sebenarnya -->
-            <a class="nav-github" href="https://github.com/xeylabs" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
-              </svg>
-              GitHub
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="hero" id="top">
-      <div class="container hero-inner">
-        <p class="hero-badge reveal">Independent research &amp; technology lab</p>
-        <h1 class="reveal" style="--d: 60ms">
-          We research, prototype &amp; ship <span class="highlight">what's next</span>.
-        </h1>
-        <p class="hero-sub reveal" style="--d: 120ms">
-          XEY Labs is an independent technology lab exploring software, tools, and
-          experiments — from first sketch to working product.
-        </p>
-        <div class="hero-actions reveal" style="--d: 180ms">
-          <a class="btn btn-primary" href="#projects">
-            View projects
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-          </a>
-          <!-- TODO: ganti dengan URL org GitHub XEY Labs yang sebenarnya -->
-          <a class="btn btn-secondary" href="https://github.com/xeylabs" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-            Follow on GitHub
-          </a>
-        </div>
-        <div class="hero-meta reveal" style="--d: 240ms">
-          <span class="meta-chip">Est. 2026</span>
-          <span class="meta-chip">Indonesia</span>
-          <span class="meta-chip">Open collaboration</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="section container" id="focus" aria-labelledby="focus-title">
-      <div class="section-head reveal">
-        <span class="section-kicker">What we do</span>
-        <h2 class="section-title" id="focus-title">Three tracks, one lab</h2>
-        <p class="section-sub">Everything we do falls into one of three loops — explore, share, build.</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card reveal">
-          <span class="feature-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6.5L4.5 18a3 3 0 0 0 2.6 4.5h9.8a3 3 0 0 0 2.6-4.5L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7 15h10"/></svg>
-          </span>
-          <h3>Applied research</h3>
-          <p>Exploring new tools, protocols, and interfaces through small, fast experiments — learn by building, not by guessing.</p>
-        </div>
-        <div class="feature-card reveal" style="--d: 80ms">
-          <span class="feature-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8-5 4 5 4"/><path d="m16 8 5 4-5 4"/><path d="m13 5-2 14"/></svg>
-          </span>
-          <h3>Open source</h3>
-          <p>Building in the open. Most of what we learn ends up public on GitHub, free for anyone to use and improve.</p>
-        </div>
-        <div class="feature-card reveal" style="--d: 160ms">
-          <span class="feature-icon" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
-          </span>
-          <h3>Product prototypes</h3>
-          <p>Turning the experiments that stick into small, useful products with real users and real feedback loops.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section container" id="projects" aria-labelledby="projects-title">
-      <div class="section-head reveal">
-        <span class="section-kicker">Projects</span>
-        <h2 class="section-title" id="projects-title">From the lab</h2>
-        <p class="section-sub">Work in progress — documentation lands here as experiments mature.</p>
-      </div>
-      <div class="projects-grid">
-        <!-- TODO: ganti kartu placeholder di bawah dengan project beneran -->
-        <article class="project-card reveal">
-          <div class="project-top">
-            <span class="project-num">001</span>
-            <span class="status">Coming soon</span>
-          </div>
-          <h3>First experiment</h3>
-          <p>In the lab right now. Documentation and the repository will land here when it's ready.</p>
-          <div class="project-tags" aria-label="Tags">
-            <span class="tag">TBA</span>
-          </div>
-        </article>
-        <article class="project-card reveal" style="--d: 80ms">
-          <div class="project-top">
-            <span class="project-num">002</span>
-            <span class="status">Coming soon</span>
-          </div>
-          <h3>Second experiment</h3>
-          <p>In the lab right now. Documentation and the repository will land here when it's ready.</p>
-          <div class="project-tags" aria-label="Tags">
-            <span class="tag">TBA</span>
-          </div>
-        </article>
-        <a class="project-cta reveal" style="--d: 160ms" href="https://github.com/xeylabs" rel="noopener">
-          <h3>Your project here</h3>
-          <p>The next thing we build could be this card. Watch the org to see it happen.</p>
-          <span class="link-label">
-            Follow on GitHub
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-          </span>
-        </a>
-      </div>
-    </section>
-
-    <section class="section container" id="about" aria-labelledby="about-title">
-      <div class="section-head reveal">
-        <span class="section-kicker">About</span>
-        <h2 class="section-title" id="about-title">About the lab</h2>
-      </div>
-      <div class="about-panel reveal">
-        <p class="about-lede">
-          XEY Labs is a small team with a <span class="highlight">short loop</span> between
-          idea and artifact. We'd rather ship an honest prototype this month than a perfect
-          slide deck next year.
-        </p>
-        <div class="principles">
-          <div class="principle">
-            <span class="principle-num" aria-hidden="true">01</span>
-            <div>
-              <h3>Small by design</h3>
-              <p>A tiny team keeps decisions fast and hands-on. Everyone builds.</p>
-            </div>
-          </div>
-          <div class="principle">
-            <span class="principle-num" aria-hidden="true">02</span>
-            <div>
-              <h3>Build in the open</h3>
-              <p>Public by default. If it can't be shared yet, it isn't done.</p>
-            </div>
-          </div>
-          <div class="principle">
-            <span class="principle-num" aria-hidden="true">03</span>
-            <div>
-              <h3>Craft over hype</h3>
-              <p>We pick durable, boring technology over whatever is trending this week.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="contact container" id="contact" aria-labelledby="contact-title">
-      <div class="contact-inner reveal">
-        <h2 id="contact-title">Say hi.</h2>
-        <p>Want to collaborate, contribute, or just follow along? The lab door is open.</p>
-        <div class="hero-actions">
-          <!-- TODO: ganti dengan URL org GitHub XEY Labs yang sebenarnya -->
-          <a class="btn btn-primary" href="https://github.com/xeylabs" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-            Find us on GitHub
-          </a>
-          <!-- TODO: ganti email di bawah dengan email asli, atau hapus baris ini -->
-          <a class="btn btn-secondary" href="mailto:hello@xeylabs.com">hello@xeylabs.com</a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container footer-inner">
-      <span>© 2026 XEY Labs. All rights reserved.</span>
-      <ul class="footer-links">
-        <li><a href="#focus">Focus</a></li>
-        <li><a href="#projects">Projects</a></li>
-        <li><a href="#about">About</a></li>
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — INDEPENDENT RESEARCH &amp; TECHNOLOGY</span>
+      <span class="mono">
+        <span class="nav-opt">EST.2026 / ID</span>
+        <a href="#focus">FOCUS</a>
+        <a href="#projects">PROJECTS</a>
+        <a href="#about">ABOUT</a>
         <!-- TODO: ganti dengan URL org GitHub XEY Labs yang sebenarnya -->
-        <li><a href="https://github.com/xeylabs" rel="noopener">GitHub</a></li>
-      </ul>
-    </div>
-  </footer>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-label="Introduction">
+        <div class="hero-kicker mono">
+          <span>FIG.00 — THE LAB</span>
+          <span>27.09.2026</span>
+        </div>
+        <h1 class="reveal">
+          RESEARCH.<br>
+          PROTOTYPE.<br>
+          <span class="outline">SHIP.<span class="tick" aria-hidden="true"></span></span>
+        </h1>
+        <div class="hero-low">
+          <p class="mono">
+            XEY/2026<br>
+            SMALL TEAM — SHORT LOOP<br>
+            PUBLIC BY DEFAULT
+          </p>
+          <p class="reveal" style="--d: 80ms">
+            <strong>XEY Labs</strong> is an independent technology lab. We run small,
+            fast experiments until something sticks — then we ship it in public.
+          </p>
+        </div>
+      </section>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track">
+          <div class="ticker-group">
+            <span>APPLIED RESEARCH</span><span class="star">✳</span>
+            <span>OPEN SOURCE</span><span class="star">✳</span>
+            <span>PROTOTYPES</span><span class="star">✳</span>
+            <span><em>EST. 2026</em></span><span class="star">✳</span>
+            <span>INDONESIA</span><span class="star">✳</span>
+          </div>
+          <div class="ticker-group">
+            <span>APPLIED RESEARCH</span><span class="star">✳</span>
+            <span>OPEN SOURCE</span><span class="star">✳</span>
+            <span>PROTOTYPES</span><span class="star">✳</span>
+            <span><em>EST. 2026</em></span><span class="star">✳</span>
+            <span>INDONESIA</span><span class="star">✳</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="section" id="focus" aria-labelledby="focus-title">
+        <div class="sec-head reveal">
+          <span class="idx">01</span>
+          <h2 id="focus-title">What we do</h2>
+          <span class="mono">THREE TRACKS</span>
+        </div>
+        <div class="row reveal">
+          <span class="no">T.01</span>
+          <h3>Applied research</h3>
+          <p>Small, fast experiments on tools, protocols, and interfaces. Learn by building, not by guessing.</p>
+          <span class="arr" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        </div>
+        <div class="row reveal">
+          <span class="no">T.02</span>
+          <h3>Open source</h3>
+          <p>Everything we learn ends up public on GitHub, free for anyone to use, read, and improve.</p>
+          <span class="arr" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        </div>
+        <div class="row reveal">
+          <span class="no">T.03</span>
+          <h3>Product prototypes</h3>
+          <p>The experiments that stick become small, useful products with real users and real feedback.</p>
+          <span class="arr" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        </div>
+      </section>
+
+      <section class="section" id="projects" aria-labelledby="projects-title" style="padding-top: 0;">
+        <div class="sec-head reveal">
+          <span class="idx">02</span>
+          <h2 id="projects-title">Project index</h2>
+          <span class="mono">LIVE / QUEUED</span>
+        </div>
+        <div class="tbl-head mono" aria-hidden="true">
+          <span>NO.</span><span>PROJECT</span><span>STATUS</span><span style="text-align:right;">LINK</span>
+        </div>
+        <!-- TODO: ganti baris placeholder di bawah dengan project beneran -->
+        <a class="trow reveal" href="https://github.com/xeylabs" rel="noopener">
+          <span class="no">001</span>
+          <span class="ttl">First experiment</span>
+          <span class="st">In lab</span>
+          <span class="lnk">GITHUB ↗</span>
+        </a>
+        <a class="trow reveal" href="https://github.com/xeylabs" rel="noopener">
+          <span class="no">002</span>
+          <span class="ttl">Second experiment</span>
+          <span class="st queued">Queued</span>
+          <span class="lnk">GITHUB ↗</span>
+        </a>
+        <a class="trow trow-cta reveal" href="https://github.com/xeylabs" rel="noopener">
+          <span class="no">—</span>
+          <span class="ttl">Your project here?</span>
+          <span class="st">Open slot</span>
+          <span class="lnk">FOLLOW ↗</span>
+        </a>
+        <p class="tbl-note mono">DOCS AND REPOS LAND HERE AS EXPERIMENTS MATURE.</p>
+      </section>
+
+      <section class="section" id="about" aria-labelledby="about-title" style="padding-top: 0;">
+        <div class="sec-head reveal">
+          <span class="idx">03</span>
+          <h2 id="about-title">Manifesto</h2>
+          <span class="mono">FIELD NOTES</span>
+        </div>
+        <div class="mani">
+          <span class="mono">XEY/DOCTRINE</span>
+          <div>
+            <p class="mani-state reveal">
+              We'd rather ship an honest <mark>prototype</mark> this month than a perfect
+              slide deck next year. If it can't be <mark>shared</mark>, it isn't done.
+              We pick durable, boring technology over whatever is <mark>trending</mark>.
+            </p>
+            <div class="principles">
+              <div class="principle reveal">
+                <span class="mono">P.01</span>
+                <h3>Small by design</h3>
+                <p>A tiny team keeps decisions fast and hands-on. Everyone builds.</p>
+              </div>
+              <div class="principle reveal">
+                <span class="mono">P.02</span>
+                <h3>Build in the open</h3>
+                <p>Public by default. The repo is the record of what happened.</p>
+              </div>
+              <div class="principle reveal">
+                <span class="mono">P.03</span>
+                <h3>Craft over hype</h3>
+                <p>Curiosity is the roadmap. The work has to outlive the trend.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sayhi" id="contact" aria-labelledby="contact-title">
+        <p class="mono" style="color: var(--mut); border-bottom: 1px solid var(--ink); padding-bottom: 1rem;">
+          <span class="idx" aria-hidden="true">04</span> — CONTACT
+        </p>
+        <h2 id="contact-title" class="sr-only" style="position:absolute;left:-9999px;">Contact</h2>
+        <!-- TODO: ganti email di bawah dengan email asli -->
+        <a class="big" href="mailto:hello@xeylabs.com">Say hi ↘</a>
+        <div class="sayhi-rows">
+          <a href="mailto:hello@xeylabs.com">
+            <span>HELLO@XEYLABS.COM</span><span>EMAIL ↗</span>
+          </a>
+          <!-- TODO: ganti dengan URL org GitHub XEY Labs yang sebenarnya -->
+          <a href="https://github.com/xeylabs" rel="noopener">
+            <span>GITHUB.COM/XEYLABS</span><span>GITHUB ↗</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="#top">BACK TO TOP ↑</a>
+      </div>
+      <div class="wordmark-clip" aria-hidden="true">
+        <div class="wordmark">XEY LABS<span class="dot">.</span></div>
+      </div>
+    </footer>
+  </div>
 
   <script>
-    // Scroll reveal — Subtle tier (350ms, small y offset), skipped for reduced motion
     (function () {
       var items = document.querySelectorAll('.reveal');
       var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -632,7 +526,7 @@
             io.unobserve(entry.target);
           }
         });
-      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+      }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
       items.forEach(function (el) { io.observe(el); });
     })();
   </script>
