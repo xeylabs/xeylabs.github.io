@@ -72,4 +72,40 @@
     <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/build-in-public.html"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/build-in-public.html"/>
   </url>
+  <url>
+    <loc>https://xeylabs.github.io/privacy.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/privacy.html"/>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/id/privacy.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/zh/privacy.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/ja/privacy.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/kr/privacy.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
 </urlset>
