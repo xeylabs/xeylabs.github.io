@@ -306,6 +306,33 @@ footer { border-top: 1px solid var(--ink); }
 }
 .wordmark .dot { color: transparent; -webkit-text-stroke: 2px var(--ink); }
 
+/* ===== Who (blog intro) ===== */
+.who { padding: 3.5rem 2rem; border-bottom: 1px solid var(--line); }
+.who-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+  gap: 2rem;
+}
+.who-grid > .mono { color: var(--mut); }
+.who-state {
+  font-size: clamp(1.375rem, 2.6vw, 2rem);
+  font-weight: 700; line-height: 1.25; letter-spacing: -0.015em;
+  max-width: 48rem;
+}
+.who-state mark { background: var(--lime); color: var(--ink); padding: 0 0.2em; }
+.who-links { margin-top: 1.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.who-links a {
+  font-family: var(--font-m); font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none;
+  border: 1px solid var(--ink); color: var(--ink);
+  padding: 0.4375rem 0.875rem; border-radius: 999px;
+  transition: background-color 120ms ease;
+}
+.who-links a:hover { background: var(--lime); }
+@media (max-width: 860px) {
+  .who-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+}
+
 /* ===== Blog / log pages ===== */
 .log-hero { padding: 3.5rem 2rem; border-bottom: 1px solid var(--line); }
 .log-hero .mono { color: var(--mut); display: flex; justify-content: space-between; gap: 1rem; }
