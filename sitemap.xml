@@ -60,4 +60,16 @@
     <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/hello-lab.html"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/hello-lab.html"/>
   </url>
+  <url>
+    <loc>https://xeylabs.github.io/blog/build-in-public.html</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/build-in-public.html"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/build-in-public.html"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/build-in-public.html"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/build-in-public.html"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/build-in-public.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/build-in-public.html"/>
+  </url>
 </urlset>

@@ -5,7 +5,7 @@
     <link>https://xeylabs.github.io/blog/</link>
     <description>Notes, writeups, and honest post-mortems from inside XEY Labs.</description>
     <language>en</language>
-    <lastBuildDate>Sun, 27 Sep 2026 08:00:00 +0700</lastBuildDate>
+    <lastBuildDate>Sun, 27 Sep 2026 10:00:00 +0700</lastBuildDate>
     <atom:link href="https://xeylabs.github.io/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title>Hello, lab.</title>
@@ -13,6 +13,13 @@
       <guid isPermaLink="true">https://xeylabs.github.io/blog/hello-lab.html</guid>
       <pubDate>Sun, 27 Sep 2026 08:00:00 +0700</pubDate>
       <description>Post 001. The whole thesis in miniature: start small, put it in public, improve it in the open.</description>
+    </item>
+    <item>
+      <title>Why we build in public</title>
+      <link>https://xeylabs.github.io/blog/build-in-public.html</link>
+      <guid isPermaLink="true">https://xeylabs.github.io/blog/build-in-public.html</guid>
+      <pubDate>Sun, 27 Sep 2026 10:00:00 +0700</pubDate>
+      <description>Log 002. Secrecy is the most expensive way to build. Repos default to public, logs default to written, mistakes default to visible.</description>
     </item>
   </channel>
 </rss>
