@@ -14,10 +14,12 @@ Zero dependencies — static HTML + one shared stylesheet, no build step.
 ## Structure
 
 ```
-index.html            landing page
+index.html            landing page (EN — default)
+id|zh|ja|kr/          terjemahan lengkap landing (5 bahasa: ID/EN/中文/日本語/한국어)
 blog/index.html       the log — entry index
-blog/hello-lab.html   first post ("Hello, lab.")
+blog/hello-lab.html   first post ("Hello, lab.") — konten post tetap EN (bahasa kerja lab), UI lokal
 assets/style.css      shared stylesheet (design system)
+feed.xml              RSS The Log · sitemap.xml + robots.txt untuk SEO
 ```
 
 **Menambah post baru:** copy `blog/hello-lab.html`, ubah konten + judul, terus tambahin satu baris `<a class="trow">` di `index.html` (section `#log`) dan `blog/index.html`. Jangan lupa tambahin `<item>` di `feed.xml` dan `<url>` di `sitemap.xml`.

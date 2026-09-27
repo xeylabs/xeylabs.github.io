@@ -389,6 +389,25 @@ footer { border-top: 1px solid var(--ink); }
 }
 .backrow a:hover { color: var(--ink); }
 
+/* ===== Language switcher & CJK ===== */
+.langsw { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.langsw a { color: var(--mut); text-decoration: none; transition: color 120ms ease; }
+.langsw a:hover { color: var(--ink); }
+.langsw .cur {
+  background: var(--lime); color: var(--ink);
+  font-weight: 600; padding: 0.0625rem 0.375rem;
+}
+.langsw .sep { color: var(--line); }
+html:lang(zh), html:lang(ja), html:lang(ko) {
+  --font-d: 'Archivo', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', 'PingFang SC',
+            'Hiragino Sans', 'Yu Gothic UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+}
+html:lang(zh) .hero h1, html:lang(ja) .hero h1, html:lang(ko) .hero h1,
+html:lang(zh) .log-hero h1, html:lang(ja) .log-hero h1, html:lang(ko) .log-hero h1 {
+  letter-spacing: 0.02em; line-height: 1.08;
+}
+html:lang(zh) .post h1, html:lang(ja) .post h1, html:lang(ko) .post h1 { letter-spacing: 0.02em; }
+
 /* ===== Reveal ===== */
 .reveal {
   opacity: 0; transform: translateY(12px);
