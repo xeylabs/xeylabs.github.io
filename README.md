@@ -4,10 +4,10 @@ Official landing page for **XEY Labs**, hosted on GitHub Pages.
 
 Built from the [UI/UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) design system:
 
-- **Style:** Swiss Modernism 2.0 — mathematical grid, modular spacing, asymmetric hierarchy
-- **Colors:** navy `#0F172A` · blue `#2563EB` · amber `#A16207` / `#F59E0B` · off-white `#F8FAFC`
-- **Type:** EB Garamond (display) · Crimson Text (body)
-- **Motion:** 400ms stagger reveal, `prefers-reduced-motion` respected
+- **Style:** Minimalism & Swiss Style — clean, spacious, grid-based
+- **Colors:** light `#F8FAFC` · trust blue `#2563EB` · CTA orange `#EA580C` · ink `#1E293B`
+- **Type:** Plus Jakarta Sans (display + body)
+- **Motion:** 350ms subtle scroll reveal, `prefers-reduced-motion` respected
 
 Zero dependencies — a single `index.html`, no build step.
 
