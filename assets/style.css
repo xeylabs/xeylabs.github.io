@@ -11,7 +11,7 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body { overflow-x: clip; }
+/* NOTE: no overflow-x clip on html/body — it breaks position:sticky (topbar) in Chromium */
 
 body {
   background: var(--paper);
@@ -62,7 +62,7 @@ a { color: inherit; cursor: pointer; }
 .topbar .mono a:hover { color: var(--ink); }
 .topbar .mono strong { color: var(--ink); font-weight: 600; }
 @media (max-width: 860px) { .topbar .mono a { margin-left: 1rem; } }
-@media (max-width: 640px) { .topbar .mono .nav-opt { display: none; } }
+@media (max-width: 640px) { .topbar .mono .nav-opt { display: none; } section { scroll-margin-top: 7.5rem; } }
 
 /* ===== Hero ===== */
 .hero { padding: 3.5rem 2rem 0; }
@@ -122,7 +122,7 @@ a { color: inherit; cursor: pointer; }
 @keyframes tick { to { transform: translateX(-50%); } }
 
 /* ===== Sections ===== */
-section { scroll-margin-top: 1.5rem; }
+    section { scroll-margin-top: 4.5rem; }
 .section { padding: 4.5rem 2rem 5rem; }
 .sec-head {
   display: flex; align-items: baseline; gap: 1.5rem;
