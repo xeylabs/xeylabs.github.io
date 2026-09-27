@@ -20,7 +20,7 @@ blog/hello-lab.html   first post ("Hello, lab.")
 assets/style.css      shared stylesheet (design system)
 ```
 
-**Menambah post baru:** copy `blog/hello-lab.html`, ubah konten + judul, terus tambahin satu baris `<a class="trow">` di `index.html` (section `#log`) dan `blog/index.html`.
+**Menambah post baru:** copy `blog/hello-lab.html`, ubah konten + judul, terus tambahin satu baris `<a class="trow">` di `index.html` (section `#log`) dan `blog/index.html`. Jangan lupa tambahin `<item>` di `feed.xml` dan `<url>` di `sitemap.xml`.
 
 ## Edit me
 
