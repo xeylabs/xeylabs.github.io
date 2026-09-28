@@ -3,35 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>003 — プロジェクト001：XProtect、公開へ — XEY Labs</title>
+  <title>003 — プロジェクト001：Mythic、公開へ — XEY Labs</title>
   <meta name="description" content="ログ003。ラボ初のプロジェクトが公開に：適応型ボット対策、クライアントを信頼しない、AGPL —— そして自分たちの攻撃で見つけた2つの穴。">
-  <link rel="canonical" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <link rel="canonical" href="https://xeylabs.github.io/ja/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/ship-public.html">
   <meta name="theme-color" content="#F4F3EE">
   <link rel="alternate" type="application/rss+xml" title="The Log — XEY Labs" href="https://xeylabs.github.io/feed.xml">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../../assets/style.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
   <div class="frame">
     <header class="topbar">
-      <span class="mono"><strong>XEY LABS</strong> — THE LOG / 003</span>
+      <span class="mono"><strong>XEY LABS</strong> — MYTHIC / 001</span>
       <span class="langsw mono" aria-label="Language">
-        <a href="/id/blog/project-001-xprotect.html">ID</a><span class="sep">/</span>
-        <a href="/blog/project-001-xprotect.html">EN</a><span class="sep">/</span>
-        <a href="/zh/blog/project-001-xprotect.html">中文</a><span class="sep">/</span>
+        <a href="/id/projects/mythic/ship-public.html">ID</a><span class="sep">/</span>
+        <a href="/projects/mythic/ship-public.html">EN</a><span class="sep">/</span>
+        <a href="/zh/projects/mythic/ship-public.html">中文</a><span class="sep">/</span>
         <strong class="cur">日本語</strong><span class="sep">/</span>
-        <a href="/kr/blog/project-001-xprotect.html">한국어</a>
+        <a href="/kr/projects/mythic/ship-public.html">한국어</a>
       </span>
       <span class="mono">
         <a href="index.html">← LOG</a>
@@ -43,16 +43,16 @@
     <main id="main">
       <article class="post">
         <div class="post-meta mono">
-          <span>003 / プロジェクト出荷</span>
+          <span>001 / 出荷</span>
           <span>28.09.2026</span>
           <span>XEY LABS</span>
           <span>4分で読める</span>
         </div>
-        <h1>プロジェクト001：XProtect、公開へ。</h1>
+        <h1>プロジェクト001：Mythic、公開へ。</h1>
         <div class="post-body">
           <p>
             本日、ラボ初のプロジェクトがリポジトリから記録へ：
-            <a href="https://github.com/xeylabs/xprotect" rel="noopener"><strong>XProtect</strong></a>
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
             —— 適応型ボット対策。キャプチャが負ける時代のための代替品です。
             AGPL-3.0、本日より完全公開。
           </p>
@@ -68,7 +68,7 @@
 
           <h2>テーゼ：クライアントを信頼しない</h2>
           <p>
-            XProtectは、ブラウザをデフォルトで敵対的なものと仮定します。クライアント
+            Mythicは、ブラウザをデフォルトで敵対的なものと仮定します。クライアント
             から届くすべてのバイトは敵対的入力 —— だからクライアントSDKは
             <em>センサー</em>であって、裁判官では決してない。判断はサーバー側で、
             名前付きの監査可能な理由を出す決定論的リスクエンジンが行います。悪用の
@@ -107,7 +107,7 @@
           <p>
             すべて —— エンジンもSDKも —— AGPL-3.0-or-later。読んで、クローンして、
             壊してください。壊せたら、まず
-            <a href="https://github.com/xeylabs/xprotect/security/advisories/new" rel="noopener">非公開で</a>
+            <a href="https://github.com/xeylabs/mythic/security/advisories/new" rel="noopener">非公開で</a>
             教えてください。コントリビューションはリポジトリ内のCLAのもとで歓迎
             します。
           </p>
@@ -120,8 +120,8 @@
       </article>
 
       <div class="backrow">
-        <a href="index.html">← 全エントリー</a>
-        <a href="../index.html">XEYLABS HOME</a>
+        <a href="index.html">← BUILD LOG</a>
+        <a href="../../index.html">XEYLABS HOME</a>
       </div>
     </main>
 

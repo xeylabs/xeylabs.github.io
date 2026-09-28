@@ -145,15 +145,15 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://xeylabs.github.io/blog/project-001-xprotect.html</loc>
+    <loc>https://xeylabs.github.io/projects/mythic/ship-public.html</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/project-001-xprotect.html"/>
-    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html"/>
-    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html"/>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/project-001-xprotect.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/ship-public.html"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/ship-public.html"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/ship-public.html"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/ship-public.html"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/ship-public.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/ship-public.html"/>
   </url>
 </urlset>

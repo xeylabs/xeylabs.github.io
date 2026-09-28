@@ -8,9 +8,9 @@
     <lastBuildDate>Mon, 28 Sep 2026 06:00:00 +0700</lastBuildDate>
     <atom:link href="https://xeylabs.github.io/feed.xml" rel="self" type="application/rss+xml"/>
         <item>
-      <title>Project 001: XProtect ships public</title>
-      <link>https://xeylabs.github.io/blog/project-001-xprotect.html</link>
-      <guid isPermaLink="true">https://xeylabs.github.io/blog/project-001-xprotect.html</guid>
+      <title>Project 001: Mythic ships public</title>
+      <link>https://xeylabs.github.io/projects/mythic/ship-public.html</link>
+      <guid isPermaLink="true">https://xeylabs.github.io/projects/mythic/ship-public.html</guid>
       <pubDate>Mon, 28 Sep 2026 06:00:00 +0700</pubDate>
       <description>Log 003. The lab's first project goes public: adaptive bot mitigation, never trust the client, AGPL — and the two holes we found by attacking it ourselves.</description>
     </item>

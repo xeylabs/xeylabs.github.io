@@ -3,34 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>003 — 프로젝트 001: XProtect 공개 출시 — XEY Labs</title>
+  <title>003 — 프로젝트 001: Mythic 공개 출시 — XEY Labs</title>
   <meta name="description" content="로그 003. 랩의 첫 프로젝트가 공개됩니다: 적응형 봇 완화, 클라이언트를 절대 신뢰하지 마라, AGPL — 그리고 우리가 직접 공격해서 찾은 두 개의 구멍.">
-  <link rel="canonical" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html">
-  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <link rel="canonical" href="https://xeylabs.github.io/kr/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/ship-public.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/ship-public.html">
   <meta name="theme-color" content="#F4F3EE">
   <link rel="alternate" type="application/rss+xml" title="The Log — XEY Labs" href="https://xeylabs.github.io/feed.xml">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../../assets/style.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
   <div class="frame">
     <header class="topbar">
-      <span class="mono"><strong>XEY LABS</strong> — THE LOG / 003</span>
+      <span class="mono"><strong>XEY LABS</strong> — MYTHIC / 001</span>
       <span class="langsw mono" aria-label="Language">
-        <a href="/id/blog/project-001-xprotect.html">ID</a><span class="sep">/</span>
-        <a href="/blog/project-001-xprotect.html">EN</a><span class="sep">/</span>
-        <a href="/zh/blog/project-001-xprotect.html">中文</a><span class="sep">/</span>
-        <a href="/ja/blog/project-001-xprotect.html">日本語</a><span class="sep">/</span>
+        <a href="/id/projects/mythic/ship-public.html">ID</a><span class="sep">/</span>
+        <a href="/projects/mythic/ship-public.html">EN</a><span class="sep">/</span>
+        <a href="/zh/projects/mythic/ship-public.html">中文</a><span class="sep">/</span>
+        <a href="/ja/projects/mythic/ship-public.html">日本語</a><span class="sep">/</span>
         <strong class="cur">한국어</strong>
       </span>
       <span class="mono">
@@ -43,16 +43,16 @@
     <main id="main">
       <article class="post">
         <div class="post-meta mono">
-          <span>003 / 프로젝트 출시</span>
+          <span>001 / 출시</span>
           <span>28.09.2026</span>
           <span>XEY LABS</span>
           <span>4분 읽기</span>
         </div>
-        <h1>프로젝트 001: XProtect 공개 출시.</h1>
+        <h1>프로젝트 001: Mythic 공개 출시.</h1>
         <div class="post-body">
           <p>
             오늘 랩의 첫 프로젝트가 저장소에서 기록으로 넘어갑니다:
-            <a href="https://github.com/xeylabs/xprotect" rel="noopener"><strong>XProtect</strong></a>
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
             —— 적응형 봇 완화. 캡차가 지는 시대를 위한 대체품입니다. AGPL-3.0,
             오늘부로 완전 공개.
           </p>
@@ -68,7 +68,7 @@
 
           <h2>테제: 클라이언트를 절대 신뢰하지 마라</h2>
           <p>
-            XProtect는 브라우저를 기본적으로 적대적인 것으로 가정합니다. 클라이언트에서
+            Mythic는 브라우저를 기본적으로 적대적인 것으로 가정합니다. 클라이언트에서
             도착하는 모든 바이트는 적대적 입력 —— 그래서 클라이언트 SDK는
             <em>센서</em>이지, 결코 심판이 아닙니다. 결정은 서버 측에서, 이름 붙고
             감사 가능한 이유를 출력하는 결정론적 리스크 엔진이 내립니다. 남용의
@@ -107,7 +107,7 @@
           <p>
             모든 것 —— 엔진과 SDK —— 가 AGPL-3.0-or-later입니다. 읽고, 클론하고,
             부수세요. 부쉈다면 먼저
-            <a href="https://github.com/xeylabs/xprotect/security/advisories/new" rel="noopener">비공개로</a>
+            <a href="https://github.com/xeylabs/mythic/security/advisories/new" rel="noopener">비공개로</a>
             알려 주세요. 기여는 저장소의 CLA에 따라 환영합니다.
           </p>
 
@@ -119,8 +119,8 @@
       </article>
 
       <div class="backrow">
-        <a href="index.html">← 전체 글</a>
-        <a href="../index.html">XEYLABS HOME</a>
+        <a href="index.html">← BUILD LOG</a>
+        <a href="../../index.html">XEYLABS HOME</a>
       </div>
     </main>
 
