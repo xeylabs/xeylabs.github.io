@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>003 — 项目 001：XProtect 公开发布 — XEY Labs</title>
+  <meta name="description" content="日志 003。实验室的第一个项目公开发布：自适应反机器人、永不信任客户端、AGPL —— 以及我们攻击自己时发现的两个漏洞。">
+  <link rel="canonical" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="The Log — XEY Labs" href="https://xeylabs.github.io/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — THE LOG / 003</span>
+      <span class="langsw mono" aria-label="Language">
+        <a href="/id/blog/project-001-xprotect.html">ID</a><span class="sep">/</span>
+        <a href="/blog/project-001-xprotect.html">EN</a><span class="sep">/</span>
+        <strong class="cur">中文</strong><span class="sep">/</span>
+        <a href="/ja/blog/project-001-xprotect.html">日本語</a><span class="sep">/</span>
+        <a href="/kr/blog/project-001-xprotect.html">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="index.html">← LOG</a>
+        <a href="../index.html">LAB</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>003 / 项目发布</span>
+          <span>28.09.2026</span>
+          <span>XEY LABS</span>
+          <span>4 分钟阅读</span>
+        </div>
+        <h1>项目 001：XProtect 公开发布。</h1>
+        <div class="post-body">
+          <p>
+            今天，实验室的第一个项目从仓库变成了记录：
+            <a href="https://github.com/xeylabs/xprotect" rel="noopener"><strong>XProtect</strong></a>
+            —— 自适应反机器人系统，为验证码落败的时代而生的替代品。AGPL-3.0，
+            自今天起完全公开。
+          </p>
+
+          <h2>我们选中的问题</h2>
+          <p>
+            验证码已经死了，而且死得可测量。打码平台卖一千个答案比一顿午饭还便宜。
+            视觉模型把图像谜题当文字读。隐身浏览器迈过本该抓住它们的指纹检查。
+            所有静态谜题共享同一种失败方式：<strong>一个解题器，被发现一次，
+            就永远杀死它。</strong>
+          </p>
+
+          <h2>论点：永远不要信任客户端</h2>
+          <p>
+            XProtect 默认假设浏览器充满敌意。来自客户端的每一个字节都是对抗性
+            输入 —— 所以客户端 SDK 是<em>传感器</em>，绝不是裁判。决策发生在
+            服务端，由一个确定性的风险引擎给出有名有据、可审计的理由。滥用被
+            分层定价：自适应工作量证明对人类来说大约是在 Web Worker 里花一秒
+            —— 而对机器人农场，同样的成本按请求计算、永远如此。高风险流量拿到
+            更难的挑战；关键操作可以要求加密证明。裁决以短时效、Ed25519 签名的
+            令牌传递，你的后端本地即可验证 —— 无需回调。
+          </p>
+          <p>
+            <mark>目标从来不是"攻不破"。目标是让滥用在经济上变得不理性。</mark>
+          </p>
+
+          <h2>我们先自己动手攻破</h2>
+          <p>
+            发布之前，我们先攻击了自己。对令牌格式的一万次变异风暴抓到一个真实
+            的接受漏洞：不同的字符串可以解码出相同的已签名字节。一场现场混沌
+            测试发现一个伪造头能二十次全部绕过按 IP 的限流器。两个都已修复、
+            都被回归测试钉死，并且现在每次推送都有模糊测试器在 CI 里碾过验证
+            路径。绕过报告才是最有用的部分 —— <strong>这就是我们希望这个项目
+            奖励的文化。</strong>
+          </p>
+
+          <h2>它诚实地还做不到什么</h2>
+          <p>
+            v0 会输给资金充足、拥有隐身浏览器和原生解题器的操作者。我们在威胁
+            模型里白纸黑字地承认。答案是路线图，不是气氛组：行为生物特征、
+            加密升级验证、学习引擎。默认公开，意味着缺口也公开。
+          </p>
+
+          <h2>许可证</h2>
+          <p>
+            一切 —— 引擎与 SDK —— 均为 AGPL-3.0-or-later。读它、克隆它、攻破它。
+            如果你攻破了，请先
+            <a href="https://github.com/xeylabs/xprotect/security/advisories/new" rel="noopener">私下</a>
+            告诉我们。欢迎按仓库中的 CLA 贡献代码。
+          </p>
+
+          <p>
+            项目 001 已上线。项目 002 已在排队。
+          </p>
+          <p class="post-sign">— XEY LABS，发布日</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="index.html">← 全部文章</a>
+        <a href="../index.html">XEYLABS HOME</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/privacy.html">PRIVACY</a>
+        <a href="/rules.html">RULES</a>
+        <a href="#main">BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

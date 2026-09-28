@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>003 — プロジェクト001：XProtect、公開へ — XEY Labs</title>
+  <meta name="description" content="ログ003。ラボ初のプロジェクトが公開に：適応型ボット対策、クライアントを信頼しない、AGPL —— そして自分たちの攻撃で見つけた2つの穴。">
+  <link rel="canonical" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="The Log — XEY Labs" href="https://xeylabs.github.io/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — THE LOG / 003</span>
+      <span class="langsw mono" aria-label="Language">
+        <a href="/id/blog/project-001-xprotect.html">ID</a><span class="sep">/</span>
+        <a href="/blog/project-001-xprotect.html">EN</a><span class="sep">/</span>
+        <a href="/zh/blog/project-001-xprotect.html">中文</a><span class="sep">/</span>
+        <strong class="cur">日本語</strong><span class="sep">/</span>
+        <a href="/kr/blog/project-001-xprotect.html">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="index.html">← LOG</a>
+        <a href="../index.html">LAB</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>003 / プロジェクト出荷</span>
+          <span>28.09.2026</span>
+          <span>XEY LABS</span>
+          <span>4分で読める</span>
+        </div>
+        <h1>プロジェクト001：XProtect、公開へ。</h1>
+        <div class="post-body">
+          <p>
+            本日、ラボ初のプロジェクトがリポジトリから記録へ：
+            <a href="https://github.com/xeylabs/xprotect" rel="noopener"><strong>XProtect</strong></a>
+            —— 適応型ボット対策。キャプチャが負ける時代のための代替品です。
+            AGPL-3.0、本日より完全公開。
+          </p>
+
+          <h2>選んだ問題</h2>
+          <p>
+            キャプチャは死にました。しかも死に方は測定可能です。ソルvingファームは
+            1,000答えを昼食より安く売る。視覚モデルは画像パズルをテキストのように
+            読む。ステルスブラウザは、捕まえるはずだったフィンガープリント検査を
+            平気で通り抜ける。静的なパズルは皆、同じ失敗モードを共有します：
+            <strong>ソルバーが一度見つかれば、永遠に殺される。</strong>
+          </p>
+
+          <h2>テーゼ：クライアントを信頼しない</h2>
+          <p>
+            XProtectは、ブラウザをデフォルトで敵対的なものと仮定します。クライアント
+            から届くすべてのバイトは敵対的入力 —— だからクライアントSDKは
+            <em>センサー</em>であって、裁判官では決してない。判断はサーバー側で、
+            名前付きの監査可能な理由を出す決定論的リスクエンジンが行います。悪用の
+            価格設定は層になっています：適応型プルーフオブワークは人間ならWeb
+            Worker内で約1秒 —— ボットファームには同じコストがリクエストごとに、
+            永遠に。リスクの高いトラフィックにはより難しいチャレンジを。重要な操作
+            には暗号学的証明を要求できます。判定は短命のEd25519署名トークンとして
+            届き、バックエンドはローカルで検証 —— コールバック不要。
+          </p>
+          <p>
+            <mark>目標は一度も「突破不能」ではありません。目標は、悪用を経済的に
+            非合理にすることです。</mark>
+          </p>
+
+          <h2>まず自分たちで壊した</h2>
+          <p>
+            公開前に、自分たちで攻撃を実行しました。トークン形式への1万回の変異
+            ストームは、実際の受容バグを捉えた：異なる文字列が同じ署名済みバイトに
+            デコードできる。ライブのカオスセッションは、偽造ヘッダー1つでIPごとの
+            レートリミッターを20回中20回突破できることを見つけた。両方修正済み。
+            両方とも回帰テストで固定済み。今や毎回のプッシュでファザーがCI上で
+            検証パスを磨き続けます。バイパス報告こそが最も有用な部分 ——
+            <strong>それがこのプロジェクトに報いてほしい文化です。</strong>
+          </p>
+
+          <h2>正直、まだできないこと</h2>
+          <p>
+            v0は、ステルスブラウザとネイティブソルバーを持つ資金力のある運用者に
+            は負けます。脅威モデルに文章で書いてあります。答えはロードマップで
+            あって雰囲気ではありません：行動バイオメトリクス、暗号学的ステップ
+            アップ、学習エンジン。デフォルトで公開ということは、穴も公開という
+            ことです。
+          </p>
+
+          <h2>ライセンス</h2>
+          <p>
+            すべて —— エンジンもSDKも —— AGPL-3.0-or-later。読んで、クローンして、
+            壊してください。壊せたら、まず
+            <a href="https://github.com/xeylabs/xprotect/security/advisories/new" rel="noopener">非公開で</a>
+            教えてください。コントリビューションはリポジトリ内のCLAのもとで歓迎
+            します。
+          </p>
+
+          <p>
+            プロジェクト001は稼働中。プロジェクト002はすでに待機中。
+          </p>
+          <p class="post-sign">— XEY LABS、出荷の日</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="index.html">← 全エントリー</a>
+        <a href="../index.html">XEYLABS HOME</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/privacy.html">PRIVACY</a>
+        <a href="/rules.html">RULES</a>
+        <a href="#main">BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

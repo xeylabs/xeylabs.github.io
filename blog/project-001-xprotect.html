@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>003 — Project 001: XProtect ships public — XEY Labs</title>
+  <meta name="description" content="Log 003. The lab's first project goes public: adaptive bot mitigation, never trust the client, AGPL — and the two holes we found by attacking it ourselves.">
+  <link rel="canonical" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="The Log — XEY Labs" href="https://xeylabs.github.io/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — THE LOG / 003</span>
+      <span class="langsw mono" aria-label="Language">
+        <a href="/id/">ID</a><span class="sep">/</span>
+        <strong class="cur">EN</strong><span class="sep">/</span>
+        <a href="/zh/">中文</a><span class="sep">/</span>
+        <a href="/ja/">日本語</a><span class="sep">/</span>
+        <a href="/kr/">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="index.html">← LOG</a>
+        <a href="../index.html">LAB</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>003 / PROJECT SHIP</span>
+          <span>28.09.2026</span>
+          <span>BY XEY LABS</span>
+          <span>4 MIN READ</span>
+        </div>
+        <h1>Project 001: XProtect ships public.</h1>
+        <div class="post-body">
+          <p>
+            Today the lab's first project goes from repo to record:
+            <a href="https://github.com/xeylabs/xprotect" rel="noopener"><strong>XProtect</strong></a> —
+            adaptive bot mitigation, built as a captcha replacement for the era
+            where captchas lose. AGPL-3.0, fully public, as of today.
+          </p>
+
+          <h2>The problem we picked</h2>
+          <p>
+            Captchas are dead, and the death is measurable. Solving farms sell a
+            thousand answers for less than lunch. Vision models read image
+            puzzles like text. Stealth browsers walk past the fingerprint
+            checks that were supposed to catch them. Every static puzzle shares
+            one failure mode: <strong>one solver, discovered once, kills it
+            forever.</strong>
+          </p>
+
+          <h2>The thesis: never trust the client</h2>
+          <p>
+            XProtect assumes the browser is hostile by default. Every byte that
+            arrives from a client is adversarial input — so the client SDK is a
+            <em>sensor</em>, never a judge. Decisions happen server-side, in a
+            deterministic risk engine that outputs named, auditable reasons.
+            The pricing of abuse is layered: an adaptive proof-of-work costs a
+            human about one second inside a web worker — and the same cost,
+            per request, forever, for a bot farm. Risky traffic gets harder
+            challenges. Critical actions can demand cryptographic proof. And
+            the verdict travels as a short-lived, Ed25519-signed token your
+            backend verifies locally — no callback needed.
+          </p>
+          <p>
+            <mark>The goal was never "unbreakable". The goal is to make abuse
+            economically irrational.</mark>
+          </p>
+
+          <h2>We tried to break it first</h2>
+          <p>
+            Before launch, we ran the attacks ourselves. A ten-thousand-mutation
+            storm over the token format caught a real acceptance bug: distinct
+            strings decoding to the same signed bytes. A live chaos session
+            found that one forged header defeated the per-IP rate limiter
+            twenty times out of twenty. Both are fixed. Both are pinned by
+            regression tests. A fuzzer now grinds the verification path in CI
+            on every push. The bypass reports were the useful part —
+            <strong>that's the culture we want this project to reward.</strong>
+          </p>
+
+          <h2>What it honestly can't do yet</h2>
+          <p>
+            v0 loses to a funded operator with a stealth browser and a native
+            solver. We say so in the threat model, in writing. The answer is
+            roadmap, not vibes: behavioral biometrics, cryptographic step-up,
+            a learning engine. Public by default means the gaps are public too.
+          </p>
+
+          <h2>License</h2>
+          <p>
+            Everything — engine and SDK — is AGPL-3.0-or-later. Read it, clone
+            it, break it. If you break it, tell us first,
+            <a href="https://github.com/xeylabs/xprotect/security/advisories/new" rel="noopener">privately</a>.
+            Contributions are welcome under the CLA in the repo.
+          </p>
+
+          <p>
+            Project 001 is live. Project 002 is already queuing up.
+          </p>
+          <p class="post-sign">— XEY LABS, SHIP DAY</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="index.html">← ALL ENTRIES</a>
+        <a href="../index.html">XEYLABS HOME</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/privacy.html">PRIVACY</a>
+        <a href="/rules.html">RULES</a>
+        <a href="#main">BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

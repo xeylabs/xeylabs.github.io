@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>003 — Proyek 001: XProtect tayang publik — XEY Labs</title>
+  <meta name="description" content="Log 003. Proyek pertama lab tayang publik: mitigasi bot adaptif, jangan percaya klien, AGPL — plus dua celah yang kami temukan dengan menyerangnya sendiri.">
+  <link rel="canonical" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/blog/project-001-xprotect.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/blog/project-001-xprotect.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="The Log — XEY Labs" href="https://xeylabs.github.io/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — THE LOG / 003</span>
+      <span class="langsw mono" aria-label="Language">
+        <strong class="cur">ID</strong><span class="sep">/</span>
+        <a href="/blog/project-001-xprotect.html">EN</a><span class="sep">/</span>
+        <a href="/zh/blog/project-001-xprotect.html">中文</a><span class="sep">/</span>
+        <a href="/ja/blog/project-001-xprotect.html">日本語</a><span class="sep">/</span>
+        <a href="/kr/blog/project-001-xprotect.html">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="index.html">← LOG</a>
+        <a href="../index.html">LAB</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>003 / PROYEK TAYANG</span>
+          <span>28.09.2026</span>
+          <span>OLEH XEY LABS</span>
+          <span>4 MENIT BACA</span>
+        </div>
+        <h1>Proyek 001: XProtect tayang publik.</h1>
+        <div class="post-body">
+          <p>
+            Hari ini proyek pertama lab naik dari repo ke catatan:
+            <a href="https://github.com/xeylabs/xprotect" rel="noopener"><strong>XProtect</strong></a> —
+            mitigasi bot adaptif, dibangun sebagai pengganti captcha untuk era
+            di mana captcha kalah. AGPL-3.0, sepenuhnya publik, mulai hari ini.
+          </p>
+
+          <h2>Masalah yang kami pilih</h2>
+          <p>
+            Captcha sudah mati, dan kematiannya terukur. Solving farm menjual
+            seribu jawaban lebih murah dari makan siang. Model vision membaca
+            puzzle gambar seperti teks. Stealth browser melangkahi pemeriksaan
+            fingerprint yang katanya menangkap mereka. Semua puzzle statis
+            punya satu mode kegagalan yang sama: <strong>satu solver, sekali
+            ditemukan, membunuhnya selamanya.</strong>
+          </p>
+
+          <h2>Tezisnya: jangan percaya klien</h2>
+          <p>
+            XProtect menganggap browser itu netral tidak ada — hostile secara
+            default. Setiap byte dari klien adalah input adversarial, jadi SDK
+            klien itu <em>sensor</em>, bukan hakim. Keputusan terjadi di
+            server, oleh risk engine deterministik dengan alasan yang
+            bernama dan bisa diaudit. Harga penyalahgunaan dibuat berlapis:
+            proof-of-work adaptif berbiaya sekitar satu detik bagi manusia di
+            dalam web worker — dan biaya yang sama, per request, selamanya,
+            bagi bot farm. Trafik berisiko mendapat challenge lebih keras.
+            Aksi kritis bisa menuntut bukti kriptografis. Dan vonis-nya
+            berpergian sebagai token pendek ber-tanda-tangan Ed25519 yang
+            backend-mu verifikasi secara lokal — tanpa callback.
+          </p>
+          <p>
+            <mark>Tujuannya bukan "tak tertembus". Tujuannya membuat
+            penyalahgunaan jadi tidak rasional secara ekonomi.</mark>
+          </p>
+
+          <h2>Kami coba tembus duluan</h2>
+          <p>
+            Sebelum peluncuran, kami jalankan serangannya sendiri. Badai
+            mutasi sepuluh ribu titik menangkap bug nyata: string berbeda
+            yang mendekode ke byte bertanda-tangan yang sama. Sesi chaos
+            langsung menemukan satu header palsu mengalahkan rate limiter
+            per-IP dua puluh dari dua puluh. Keduanya diperbaiki. Keduanya
+            terkunci oleh regression test. Sebuah fuzzer kini menggiling
+            jalur verifikasi di CI setiap push. Laporan bypass justru bagian
+            paling berharga — <strong>itulah budaya yang ingin proyek ini
+            beri imbalan.</strong>
+          </p>
+
+          <h2>Yang jujur belum bisa dia lakukan</h2>
+          <p>
+            v0 kalah dari operator bermodal dengan stealth browser dan solver
+            native. Kami tulis di threat model, tertulis. Jawabannya roadmap,
+            bukan vibes: behavioral biometrics, step-up kriptografis, learning
+            engine. Publik secara default berarti celahnya juga publik.
+          </p>
+
+          <h2>Lisensi</h2>
+          <p>
+            Semuanya — engine dan SDK — AGPL-3.0-or-later. Baca, clone,
+            tembus. Kalau berhasil menembus, kabari kami duluan,
+            <a href="https://github.com/xeylabs/xprotect/security/advisories/new" rel="noopener">secara privat</a>.
+            Kontribusi diterima dengan CLA di dalam repo.
+          </p>
+
+          <p>
+            Proyek 001 tayang. Proyek 002 sudah antre.
+          </p>
+          <p class="post-sign">— XEY LABS, HARI PELUNCURAN</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="index.html">← SEMUA ENTRI</a>
+        <a href="../index.html">XEYLABS HOME</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/privacy.html">PRIVACY</a>
+        <a href="/rules.html">RULES</a>
+        <a href="#main">BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
