@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>002 — Mythic under attack — XEY Labs</title>
+  <meta name="description" content="Build log 002. Five red-team rounds against our own project: twelve findings, every one fixed and public — including a quadratic self-DoS we built ourselves.">
+  <link rel="canonical" href="https://xeylabs.github.io/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/red-team.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="Build Log — XEY Labs" href="https://xeylabs.github.io/projects/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — MYTHIC / 002</span>
+      <span class="langsw mono" aria-label="Language">
+        <strong class="cur">EN</strong><span class="sep">/</span>
+        <a href="/id/projects/mythic/red-team.html">ID</a><span class="sep">/</span>
+        <a href="/zh/projects/mythic/red-team.html">中文</a><span class="sep">/</span>
+        <a href="/ja/projects/mythic/red-team.html">日本語</a><span class="sep">/</span>
+        <a href="/kr/projects/mythic/red-team.html">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="../log/index.html">← BUILD LOG</a>
+        <a href="index.html">PROJECT</a>
+        <a href="https://github.com/xeylabs/mythic" rel="noopener">REPO ↗</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>002 / BUILD</span>
+          <span>29.09.2026</span>
+          <span>BY XEY LABS</span>
+          <span>8 MIN READ</span>
+        </div>
+        <h1>Mythic under attack.</h1>
+        <div class="post-body">
+          <p>
+            Since the last entry, <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            gained key rotation, a Redis store for multi-node, sliding-window
+            pressure counters — and survived five rounds of us attacking it
+            like a real adversary. <strong>Twelve findings. Every one fixed,
+            tested, and public.</strong> This is the receipts post.
+          </p>
+
+          <h2>Round 1: the floor was lying</h2>
+          <p>
+            We ran mythicd live and attacked it as a black box. The first
+            finding hurt: a client that solved the proof-of-work natively in
+            milliseconds could simply <strong>sleep past the plausibility
+            floor</strong> and collect an <em>allow</em> token with zero
+            compute. The floor measured wall-clock time — and the attacker
+            controls the clock.
+          </p>
+          <p>
+            Worse, the calibration was inverted: the floor modeled a 50k H/s
+            worker, while real <code>crypto.subtle</code> workers measure
+            ~400k H/s. The honest were flagged as bots; the bots could wait.
+            We recalibrated the floor to a low quantile of honest solve time
+            (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>)
+            and rewrote the threat model to say plainly what a wall-clock
+            floor can never do.
+          </p>
+          <p>
+            Round 1 also closed a 2⁶⁴-shaped hole: the rate limiter keyed
+            IPv6 at /128, so one /64 block minted effectively unlimited
+            identities — a proof-of-concept drove 5,000 requests from a
+            single block with zero hits on the limiter
+            (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).
+            And a documented invariant — tokens never outlive their
+            challenge — turned out to be enforced nowhere; a 1-hour token
+            was minted from a 5-second challenge. Now it's a clamp.
+          </p>
+
+          <h2>Round 2: the paths nobody tests</h2>
+          <p>
+            The invalid paths were the soft ones. Three hundred bad site
+            keys, three hundred broken JSONs — served at 225 req/s with
+            <strong>zero rate limiting</strong>, because the limiter only
+            ran after validation. Garbage now drains the attacker's own
+            budget. A slow-reading client could hold its connection
+            forever — no read timeout existed; one did after that. A
+            negative <code>MYTHIC_BASE_DIFFICULTY</code> produced
+            challenges any nonce satisfied, <strong>zero-work tokens by
+            operator foot-gun</strong>; configuration is now validated at
+            startup and nonsense refuses to serve. Trailing JSON data was
+            silently accepted; it's rejected. And two processes sharing one
+            keystore could silently split-brain their signing keys — the
+            keystore now refuses to clobber a file that changed underneath it.
+          </p>
+
+          <h2>Round 5: we attacked what we had just built</h2>
+          <p>
+            The sharpest finding came from the newest code — ours. The
+            sliding-window counter stored one entry per hit, and
+            rate-limited requests still counted. A million hits from a
+            single identity: <mark>+16.4&nbsp;MB of heap, and 595 seconds
+            of CPU</mark> — the prune scanned the whole history on every
+            request. A quadratic self-DoS, triggered by the cheapest
+            attack there is: flooding and eating 429s.
+          </p>
+          <p>
+            Counters now cap their stored history at the limit and report
+            saturation. Re-running the exact same flood against the fix:
+            <strong>+0.00 MB, 714 milliseconds.</strong> O(1) per hit. The
+            same round found that hostile tuning leaked a risk score of 500
+            into signed tokens (the contract says 0–100; it clamps now),
+            and proved something we had overclaimed: with a shared Redis
+            store, tokens from one node still don't verify against another
+            node's JWKS, because signing keys are per-node. The docs now
+            say so instead of pretending multi-node is solved.
+          </p>
+
+          <h2>What Mythic actually is now</h2>
+          <p>
+            <strong>Shipped:</strong> adaptive SHA-256 PoW with
+            quantile-calibrated floors; the deterministic risk engine;
+            Ed25519 decision tokens with <strong>zero-downtime key
+            rotation</strong> (multi-key JWKS, ADR-0006); a
+            <strong>Redis store</strong> for multi-node with atomic
+            single-use challenges and sliding-window counters (ADR-0009),
+            fail-closed at the HTTP edge — a store outage surfaces as 503,
+            never as a silently-issued token; the JS SDK; a contract test
+            suite that pins both store backends to identical semantics.
+          </p>
+          <p>
+            <strong>Honestly not solved:</strong> a patient attacker who
+            solves fast and delays verification (needs the behavioral
+            layer, M2); distributed attacks with fresh identities (needs
+            network fingerprints, M1); cross-node token verification (needs
+            a shared keystore, M5). The threat model lists every one —
+            in writing, before anyone has to ask.
+          </p>
+
+          <h2>Why we do it this way</h2>
+          <p>
+            We said the bypass reports are the most valuable contributions
+            this project can receive. That has to start with our own.
+            Five rounds, twelve findings, three ADRs, every fix pinned by a
+            regression test, every re-attack re-run against the fix —
+            <strong>the lab eats its own dogfood first.</strong>
+          </p>
+          <p class="post-sign">— XEY LABS, RED TEAM DAY</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="../log/index.html">← ALL ENTRIES</a>
+        <a href="index.html">← PROJECT</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/privacy.html">PRIVACY</a>
+        <a href="/legal.html">LEGAL</a>
+        <a href="#main">BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>002 — Mythic、攻撃を受ける — XEY Labs</title>
+  <meta name="description" content="ビルドログ 002. 自分たちのプロジェクトへのレッドチーム5ラウンド：12件の発見、すべて修正して公開 — 自分たちで作った二次の自己DoSも含めて。">
+  <link rel="canonical" href="https://xeylabs.github.io/ja/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/red-team.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="Build Log — XEY Labs" href="https://xeylabs.github.io/projects/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — MYTHIC / 002</span>
+      <span class="langsw mono" aria-label="Language">
+        <a href="/projects/mythic/red-team.html">EN</a><span class="sep">/</span>
+        <a href="/id/projects/mythic/red-team.html">ID</a><span class="sep">/</span>
+        <a href="/zh/projects/mythic/red-team.html">中文</a><span class="sep">/</span>
+        <strong class="cur">日本語</strong><span class="sep">/</span>
+        <a href="/kr/projects/mythic/red-team.html">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="../log/index.html">← BUILD LOG</a>
+        <a href="index.html">プロジェクト</a>
+        <a href="https://github.com/xeylabs/mythic" rel="noopener">REPO ↗</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>002 / BUILD</span>
+          <span>2026.09.29</span>
+          <span>XEY LABS</span>
+          <span>8分</span>
+        </div>
+        <h1>Mythic、攻撃を受ける。</h1>
+        <div class="post-body">
+          <p>
+            前回のエントリーから、<a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            は鍵ローテーション、マルチノード用のRedisストア、スライディングウィンドウの
+            圧力カウンターを得て —— そして本物の敵のように攻撃する5ラウンドに耐えた。
+            <strong>12件の発見。すべて修正し、テストし、公開した。</strong>
+            これはその証拠の投稿だ。
+          </p>
+
+          <h2>ラウンド1：フロアが嘘をついていた</h2>
+          <p>
+            mythicdを生きた状態で動かし、ブラックボックスとして攻撃した。
+            最初の発見は痛かった：proof-of-workをネイティブでミリ秒で解く
+            クライアントは、plausibilityフロアを過ぎるまで<strong>眠るだけ</strong>で、
+            計算ゼロで<em>allow</em>トークンを手に入れられた。フロアは実時間を
+            測っている —— そして時計を握っているのは攻撃者だ。
+          </p>
+          <p>
+            さらに悪いことに、キャリブレーションが逆だった：フロアは5万H/sの
+            ワーカーを想定していたが、実際の<code>crypto.subtle</code>ワーカーは
+            約40万H/s。正直なクライアントがボット扱いされ、ボットは待てばよかった。
+            フロアを正直な解時間の低い分位点に再キャリブレーションし
+           （<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>）、
+            スレットモデルを書き直して、実時間フロアに決してできないことを
+            明記した。
+          </p>
+          <p>
+            ラウンド1は2⁶⁴ sizedの穴も塞いだ：レートリミッターはIPv6を/128で
+            キーイングしていたため、1個の/64ブロックがほぼ無限の識別子を
+            生成できた —— PoCは1ブロックから5,000リクエストを流し、
+            リミッターに一度も触れなかった
+            （<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>）。
+            そして文書化された不変条件 —— トークンはチャレンジより長生きしない —— は
+            どこでも強制されていなかった；5秒のチャレンジから1時間のトークンが
+            鋳造された。今はクランプされている。
+          </p>
+
+          <h2>ラウンド2：誰もテストしない経路</h2>
+          <p>
+            無効な経路こそ柔らかかった。300個の不正なサイトキー、300個の壊れたJSON ——
+            225 req/sで<strong>ゼロのレート制限</strong>で応答されていた。リミッターは
+            検証の後でしか走らなかったからだ。今はゴミも攻撃者自身の予算を削る。
+            ボディをゆっくり読むクライアントは接続を永遠に保持できた ——
+            read timeoutが存在しなかったのだ。今は存在する。負の
+            <code>MYTHIC_BASE_DIFFICULTY</code>は任意のnonceで通るチャレンジを
+            生成した、<strong>オペレーターのうっかりによるゼロワークトークン</strong>；
+            設定は起動時に検証され、無茶は起動を拒否する。JSON末尾の余分なデータは
+            黙って受け入れられていた；拒否されるようになった。そして1つの
+            キーストアを共有する2プロセスは、署名鍵を無言でスプリットブレイン
+            させ得た —— キーストアは今、下で変わったファイルの上書きを拒否する。
+          </p>
+
+          <h2>ラウンド5：自分たちが作ったものを攻撃した</h2>
+          <p>
+            最も鋭い発見は最新のコードから来た —— 自分たちのものだ。
+            スライディングウィンドウカウンターはヒットごとに1エントリを保存し、
+            レート制限されたリクエストもカウントされ続けた。1識別子から
+            100万ヒット：<mark>ヒープ+16.4MB、そして595秒のCPU</mark> ——
+            プルーンは毎リクエストで履歴全体を走査していた。最も安い攻撃 ——
+            洪水を流して429を食べ続けるだけ —— で発火する二次の自己DoSだ。
+          </p>
+          <p>
+            カウンターは今、履歴をリミットでキャップし、飽和を報告する。
+            同じ洪水を修正版に再実行：<strong>+0.00 MB、714ミリ秒。</strong>
+            ヒットあたりO(1)。同じラウンドで、敵意あるチューニングが500の
+            リスクスコアを署名済みトークンに漏らしていたこと（契約は0–100；
+            現在はクランプ）、そして過大に主張していたことを証明した：
+            Redisストアを共有しても、ノードAのトークンはノードBのJWKSでは
+            検証できない —— 署名鍵はノード単位だからだ。ドキュメントは
+            マルチノードが解決済みのふりをする代わりに、事実を書く。
+          </p>
+
+          <h2>Mythicは今、実際に何なのか</h2>
+          <p>
+            <strong>出荷済み：</strong>分位点キャリブレーションのフロア付き
+            適応的SHA-256 PoW；決定論的リスクエンジン；
+            <strong>ダウンタイムゼロの鍵ローテーション</strong>付きEd25519
+            決定トークン（マルチキーJWKS、ADR-0006）；アトミックな
+            single-useチャレンジとスライディングウィンドウカウンター付きの
+            マルチノード用<strong>Redisストア</strong>（ADR-0009）、HTTPエッジで
+            フェイルクローズド —— ストア障害は503として現れ、黙って発行された
+            トークンになることは決してない；JS SDK；両方のストアバックエンドを
+            同一のセマンティクスに固定する契約テストスイート。
+          </p>
+          <p>
+            <strong>正直、未解決：</strong>速く解いて検証を遅らせる忍耐強い
+            攻撃者（振る舞いレイヤーが必要、M2）；新しい識別子による分散攻撃
+            （ネットワークフィンガープリントが必要、M1）；ノード間トークン検証
+            （共有キーストアが必要、M5）。スレットモデルはすべて記載している ——
+            誰かに聞かれる前に、書面で。
+          </p>
+
+          <h2>なぜこのやり方なのか</h2>
+          <p>
+            バイパス報告がこのプロジェクトに寄せられる最も価値ある貢献だと
+            我々は言ってきた。それは自分たちから始めなければならない。
+            5ラウンド、12件の発見、3つのADR、すべての修正は回帰テストで
+            固定し、すべての再攻撃は修正版に対して再実行した ——
+            <strong>ラボは最初に自分のドッグフードを食べる。</strong>
+          </p>
+          <p class="post-sign">— XEY LABS、レッドチームの日</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="../log/index.html">← 全エントリ</a>
+        <a href="index.html">← プロジェクト</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/ja/privacy.html">PRIVACY</a>
+        <a href="/ja/legal.html">LEGAL</a>
+        <a href="#main">BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

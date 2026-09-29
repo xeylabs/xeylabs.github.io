@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>002 — Mythic 遭受攻击 — XEY Labs</title>
+  <meta name="description" content="构建日志 002. 对我们自己项目的五轮红队攻击：十二项发现，全部修复并公开 —— 包括我们自己亲手造出的二次方自我 DoS。">
+  <link rel="canonical" href="https://xeylabs.github.io/zh/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/red-team.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/red-team.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="Build Log — XEY Labs" href="https://xeylabs.github.io/projects/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — MYTHIC / 002</span>
+      <span class="langsw mono" aria-label="Language">
+        <a href="/projects/mythic/red-team.html">EN</a><span class="sep">/</span>
+        <a href="/id/projects/mythic/red-team.html">ID</a><span class="sep">/</span>
+        <strong class="cur">中文</strong><span class="sep">/</span>
+        <a href="/ja/projects/mythic/red-team.html">日本語</a><span class="sep">/</span>
+        <a href="/kr/projects/mythic/red-team.html">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="../log/index.html">← BUILD LOG</a>
+        <a href="index.html">项目</a>
+        <a href="https://github.com/xeylabs/mythic" rel="noopener">REPO ↗</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>002 / BUILD</span>
+          <span>2026.09.29</span>
+          <span>XEY LABS</span>
+          <span>8 分钟</span>
+        </div>
+        <h1>Mythic 遭受攻击。</h1>
+        <div class="post-body">
+          <p>
+            自上一条记录以来，<a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            有了密钥轮换、面向多节点的 Redis 存储、滑动窗口压力计数器 ——
+            并扛住了我们像真正的对手那样对它发起的五轮攻击。
+            <strong>十二项发现。全部修复、测试并公开。</strong>
+            这就是这篇凭证帖。
+          </p>
+
+          <h2>第一轮：下限在说谎</h2>
+          <p>
+            我们让 mythicd 真实运行，把它当黑盒攻击。第一个发现很痛：
+            一个用原生代码在几毫秒内解开工作量证明的客户端，只需
+            <strong>睡过合理性下限</strong>，就能以零计算拿到 <em>allow</em>
+            令牌。下限测量的是墙上时钟 —— 而攻击者控制着时钟。
+          </p>
+          <p>
+            更糟的是校准是反的：下限按 5 万 H/s 的 worker 建模，而真实的
+            <code>crypto.subtle</code> worker 实测约 40 万 H/s。诚实者被标记为
+            机器人；机器人只需等待。我们把下限重新校准为诚实解题时间的低分位
+            （<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>），
+            并重写威胁模型，直白写下墙上时钟下限永远做不到的事。
+          </p>
+          <p>
+            第一轮还堵上了一个 2⁶⁴ 形状的洞：限流器按 /128 键控 IPv6，
+            于是一个 /64 块就能铸造几乎无限的身份 —— 概念验证从一个块
+            发出 5,000 个请求，限流器一次都没碰到
+            （<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>）。
+            还有一条写进文档的不变式 —— 令牌活得不会比它的挑战长 ——
+            其实哪里都没有强制执行；5 秒的挑战铸出了 1 小时的令牌。
+            现在它是一个钳制。
+          </p>
+
+          <h2>第二轮：没人测试的路径</h2>
+          <p>
+            无效路径是最软的。三百个错误站点密钥、三百个坏 JSON ——
+            以 <strong>零限流</strong>按 225 req/s 处理，因为限流器只在
+            校验之后运行。现在垃圾也消耗攻击者自己的预算。慢速读取主体的
+            客户端可以永远占着连接 —— 当时没有读超时；现在有了。负的
+            <code>MYTHIC_BASE_DIFFICULTY</code> 产生任意 nonce 都能满足的
+            挑战，<strong>操作员踩坑换来的零工作量令牌</strong>；配置现在
+            在启动时校验，不合理就拒绝启动。JSON 尾部数据曾被默默接受；
+            现在被拒绝。两个进程共享一个密钥库会无声地脑裂签名密钥 ——
+            密钥库现在拒绝覆盖在它底下变过的文件。
+          </p>
+
+          <h2>第五轮：我们攻击了自己刚造的东西</h2>
+          <p>
+            最锋利的发现来自最新的代码 —— 我们自己的。滑动窗口计数器
+            每次命中存一条记录，而被限流的请求照样计数。来自单一身份的
+            一百万次命中：<mark>+16.4 MB 堆内存，以及 595 秒 CPU</mark> ——
+            修剪在每次请求时扫描全部历史。这是一个二次方自我 DoS，
+            由最廉价的攻击触发：灌流量、吃 429。
+          </p>
+          <p>
+            计数器现在把存储的历史封顶在限制值并报告饱和。对修复版重放
+            同样的洪水攻击：<strong>+0.00 MB，714 毫秒。</strong>每次命中
+            O(1)。同一轮还发现恶意调参把 500 的风险分值漏进签名令牌
+            （契约是 0–100；现在钳制了），并证明了我们夸下的一件事：
+            共享 Redis 存储下，一个节点的令牌仍然无法用另一个节点的
+            JWKS 验证，因为签名密钥是按节点的。文档现在如实陈述，
+            而不是假装多节点已经解决。
+          </p>
+
+          <h2>Mythic 现在到底是什么</h2>
+          <p>
+            <strong>已交付：</strong>带分位校准下限的自适应 SHA-256 PoW；
+            确定性风险引擎；带<strong>零停机密钥轮换</strong>的 Ed25519
+            决策令牌（多密钥 JWKS，ADR-0006）；面向多节点的
+            <strong>Redis 存储</strong>，原子单次使用挑战与滑动窗口计数器
+            （ADR-0009），在 HTTP 边缘故障关闭 —— 存储中断表现为 503，
+            绝不会变成默默签发的令牌；JS SDK；把两个存储后端钉死在相同
+            语义上的契约测试套件。
+          </p>
+          <p>
+            <strong>诚实地，尚未解决：</strong>快速解题然后延迟验证的
+            耐心攻击者（需要行为层，M2）；用新鲜身份的分布式攻击（需要
+            网络指纹，M1）；跨节点令牌验证（需要共享密钥库，M5）。
+            威胁模型把每一条都列着 —— 写在纸上，在任何人开口问之前。
+          </p>
+
+          <h2>我们为什么这样做</h2>
+          <p>
+            我们说过，绕过报告是这个项目能收到的最有价值的贡献。
+            那就得从我们自己开始。五轮，十二项发现，三份 ADR，每个修复
+            都有回归测试钉住，每次重放攻击都对着修复版再跑一遍 ——
+            <strong>实验室先吃自己的狗粮。</strong>
+          </p>
+          <p class="post-sign">— XEY LABS，红队日</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="../log/index.html">← 全部文章</a>
+        <a href="index.html">← 项目</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/zh/privacy.html">PRIVACY</a>
+        <a href="/zh/legal.html">LEGAL</a>
+        <a href="#main">BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
