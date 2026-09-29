@@ -145,8 +145,44 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://xeylabs.github.io/projects/</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/"/>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/projects/log/</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/log/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/log/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/log/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/log/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/log/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/log/"/>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/projects/mythic/</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/"/>
+  </url>
+  <url>
     <loc>https://xeylabs.github.io/projects/mythic/ship-public.html</loc>
-    <lastmod>2026-09-28</lastmod>
+    <lastmod>2026-09-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/ship-public.html"/>
