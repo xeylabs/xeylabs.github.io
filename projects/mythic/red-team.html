@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>002 — Mythic under attack — XEY Labs</title>
-  <meta name="description" content="Build log 002. Five red-team rounds against our own project: twelve findings, every one fixed and public — including a quadratic self-DoS we built ourselves.">
+  <title>002 — Hardening Mythic — XEY Labs</title>
+  <meta name="description" content="Build log 002. Key rotation, a Redis store for multi-node, and a hardening pass: twelve findings from adversarial testing, each fixed and pinned by a regression test.">
   <link rel="canonical" href="https://xeylabs.github.io/projects/mythic/red-team.html">
   <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/red-team.html">
   <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/red-team.html">
@@ -49,114 +49,130 @@
           <span>BY XEY LABS</span>
           <span>8 MIN READ</span>
         </div>
-        <h1>Mythic under attack.</h1>
+        <h1>Hardening Mythic.</h1>
         <div class="post-body">
           <p>
-            Since the last entry, <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            gained key rotation, a Redis store for multi-node, sliding-window
-            pressure counters — and survived five rounds of us attacking it
-            like a real adversary. <strong>Twelve findings. Every one fixed,
-            tested, and public.</strong> This is the receipts post.
+            This entry records one week of work on
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            in one pass: two M1 roadmap items and a hardening pass driven by
+            adversarial testing of our own server. The testing produced
+            twelve findings; all twelve are fixed, each pinned by a
+            regression test, and each fix was re-verified against the
+            original reproduction before it was called done.
           </p>
 
-          <h2>Round 1: the floor was lying</h2>
+          <h2>Key rotation without downtime (ADR-0006)</h2>
           <p>
-            We ran mythicd live and attacked it as a black box. The first
-            finding hurt: a client that solved the proof-of-work natively in
-            milliseconds could simply <strong>sleep past the plausibility
-            floor</strong> and collect an <em>allow</em> token with zero
-            compute. The floor measured wall-clock time — and the attacker
-            controls the clock.
+            Until this week Mythic signed every decision token with a single
+            Ed25519 key; rotating it meant a restart and invalidated every
+            live token. The server now keeps a key ring with exactly one
+            active signer. Rotation is time-based and runs in-process
+            (<code>MYTHIC_KEY_MAX_AGE</code>, default 720h); retired keys
+            stay advertised in the JWKS for
+            <code>MYTHIC_KEY_RETENTION</code> (default 24h) — longer than
+            any token they signed can remain valid. The keystore is a JSON
+            file written atomically; legacy 32-byte seed files still load
+            and migrate on first save. Origins keep verifying tokens
+            locally, selecting the key by the <code>kid</code> claim.
+          </p>
+
+          <h2>Store: Redis for multi-node (ADR-0009)</h2>
+          <p>
+            The in-memory store bound mythicd to a single node.
+            <code>MYTHIC_STORE=redis</code> selects a Redis backend:
+            single-use challenges via <code>GETDEL</code> (atomic
+            fetch-and-delete) and pressure counters as sorted sets pruned by
+            one Lua script. Both backends implement sliding-window counters,
+            which closes the fixed-window boundary burst. The
+            <code>Store</code> interface now returns errors: an unreachable
+            Redis refuses startup, and a runtime outage surfaces as
+            <code>503 store_unavailable</code> on <code>/v1</code> while
+            <code>/healthz</code> stays open for load balancers. A shared
+            contract suite runs against both backends (memory and miniredis)
+            so their semantics cannot drift.
           </p>
           <p>
-            Worse, the calibration was inverted: the floor modeled a 50k H/s
-            worker, while real <code>crypto.subtle</code> workers measure
-            ~400k H/s. The honest were flagged as bots; the bots could wait.
-            We recalibrated the floor to a low quantile of honest solve time
-            (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>)
-            and rewrote the threat model to say plainly what a wall-clock
-            floor can never do.
+            One caveat in writing: the store is shared, signing keys are
+            not. A token from node A does not verify against node B's JWKS.
+            Multi-node token verification needs a shared keystore (KMS/HSM)
+            — M5, not solved by this change.
           </p>
+
+          <h2>Hardening pass: twelve findings</h2>
           <p>
-            Round 1 also closed a 2⁶⁴-shaped hole: the rate limiter keyed
-            IPv6 at /128, so one /64 block minted effectively unlimited
-            identities — a proof-of-concept drove 5,000 requests from a
-            single block with zero hits on the limiter
+            Adversarial testing — black-box against a live server, with
+            white-box confirmation where needed — produced twelve findings.
+            The notable ones, grouped by area:
+          </p>
+
+          <h3>Transport and limits</h3>
+          <p>
+            The rate-limit budget was consumed only after validation:
+            invalid-JSON and unknown-site-key floods ran unthrottled (600
+            requests at 225 req/s, zero 429s). Budget is now counted before
+            validation. The limiter keyed IPv6 at /128 — a single /64
+            controlled 2⁶⁴ identities (5,000 requests from one block, zero
+            hits); counters now aggregate IPv6 to /64
             (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).
-            And a documented invariant — tokens never outlive their
-            challenge — turned out to be enforced nowhere; a 1-hour token
-            was minted from a 5-second challenge. Now it's a clamp.
+            No body/read/idle timeouts existed; a slow client held
+            connections indefinitely. <code>ReadTimeout</code>,
+            <code>WriteTimeout</code>, and <code>IdleTimeout</code> are set.
           </p>
 
-          <h2>Round 2: the paths nobody tests</h2>
+          <h3>Challenge economics</h3>
           <p>
-            The invalid paths were the soft ones. Three hundred bad site
-            keys, three hundred broken JSONs — served at 225 req/s with
-            <strong>zero rate limiting</strong>, because the limiter only
-            ran after validation. Garbage now drains the attacker's own
-            budget. A slow-reading client could hold its connection
-            forever — no read timeout existed; one did after that. A
-            negative <code>MYTHIC_BASE_DIFFICULTY</code> produced
-            challenges any nonce satisfied, <strong>zero-work tokens by
-            operator foot-gun</strong>; configuration is now validated at
-            startup and nonsense refuses to serve. Trailing JSON data was
-            silently accepted; it's rejected. And two processes sharing one
-            keystore could silently split-brain their signing keys — the
-            keystore now refuses to clobber a file that changed underneath it.
+            The solve-time floor modeled a 50k H/s worker; measured
+            <code>crypto.subtle</code> workers run ~400k H/s, so honest
+            clients were flagged as implausible — and any client could
+            simply delay verification past the floor. The floor is now a
+            low quantile of honest solve time
+            (<code>2^d / (2M × 32)</code>,
+            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>):
+            false positives ≤ ~6% worst case, GPU-class answers trip it
+            ~96% of the time. The threat model states that a wall-clock
+            floor cannot catch a client that delays verification — that is
+            the behavioral layer's job (M2).
           </p>
 
-          <h2>Round 5: we attacked what we had just built</h2>
+          <h3>Tokens and configuration</h3>
           <p>
-            The sharpest finding came from the newest code — ours. The
-            sliding-window counter stored one entry per hit, and
-            rate-limited requests still counted. A million hits from a
-            single identity: <mark>+16.4&nbsp;MB of heap, and 595 seconds
-            of CPU</mark> — the prune scanned the whole history on every
-            request. A quadratic self-DoS, triggered by the cheapest
-            attack there is: flooding and eating 429s.
-          </p>
-          <p>
-            Counters now cap their stored history at the limit and report
-            saturation. Re-running the exact same flood against the fix:
-            <strong>+0.00 MB, 714 milliseconds.</strong> O(1) per hit. The
-            same round found that hostile tuning leaked a risk score of 500
-            into signed tokens (the contract says 0–100; it clamps now),
-            and proved something we had overclaimed: with a shared Redis
-            store, tokens from one node still don't verify against another
-            node's JWKS, because signing keys are per-node. The docs now
-            say so instead of pretending multi-node is solved.
+            The documented invariant that tokens never outlive their
+            challenge was unenforced — a 1-hour token was issued from a
+            5-second challenge. <code>TokenTTL</code> is now clamped to
+            <code>ChallengeTTL</code>. Hostile tuning
+            (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) leaked a risk score
+            of 500 into signed tokens; scores clamp to 0–100 and penalties
+            above 100 refuse to start. A negative
+            <code>MYTHIC_BASE_DIFFICULTY</code> issued challenges any nonce
+            satisfied; configuration is validated at startup and
+            out-of-range values refuse to serve.
           </p>
 
-          <h2>What Mythic actually is now</h2>
+          <h3>State handling</h3>
           <p>
-            <strong>Shipped:</strong> adaptive SHA-256 PoW with
-            quantile-calibrated floors; the deterministic risk engine;
-            Ed25519 decision tokens with <strong>zero-downtime key
-            rotation</strong> (multi-key JWKS, ADR-0006); a
-            <strong>Redis store</strong> for multi-node with atomic
-            single-use challenges and sliding-window counters (ADR-0009),
-            fail-closed at the HTTP edge — a store outage surfaces as 503,
-            never as a silently-issued token; the JS SDK; a contract test
-            suite that pins both store backends to identical semantics.
-          </p>
-          <p>
-            <strong>Honestly not solved:</strong> a patient attacker who
-            solves fast and delays verification (needs the behavioral
-            layer, M2); distributed attacks with fresh identities (needs
-            network fingerprints, M1); cross-node token verification (needs
-            a shared keystore, M5). The threat model lists every one —
-            in writing, before anyone has to ask.
+            Two processes sharing one keystore collided on the same temp
+            file or silently split-brained their signing keys; temp names
+            are process-unique and saves refuse to overwrite a file changed
+            since load. Trailing bytes after a JSON value were silently
+            ignored; they are rejected. The sliding-window counter stored
+            one entry per hit — including rate-limited ones — so a million
+            hits from one identity cost ~16.4 MB of heap and 595 s of CPU.
+            Counters now saturate at <code>IPLimit+1</code>: the same flood
+            costs +0.00 MB and 714 ms.
           </p>
 
-          <h2>Why we do it this way</h2>
+          <h2>Verification</h2>
           <p>
-            We said the bypass reports are the most valuable contributions
-            this project can receive. That has to start with our own.
-            Five rounds, twelve findings, three ADRs, every fix pinned by a
-            regression test, every re-attack re-run against the fix —
-            <strong>the lab eats its own dogfood first.</strong>
+            Every finding has a reproduction; every fix has a regression
+            test (<code>go test ./... -race</code>, plus the SDK typecheck
+            and tests), and every fix was re-verified against the original
+            reproduction. What remains open is documented in the threat
+            model: patient solvers that delay verification (M2, behavioral
+            signals), distributed attacks with fresh identities (M1,
+            network fingerprints), and per-node keystores (M5, shared
+            KMS/HSM).
           </p>
-          <p class="post-sign">— XEY LABS, RED TEAM DAY</p>
+          <p class="post-sign">— XEY LABS</p>
         </div>
       </article>
 

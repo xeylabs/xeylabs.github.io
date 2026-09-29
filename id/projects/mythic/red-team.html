@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>002 — Mythic diserang — XEY Labs</title>
-  <meta name="description" content="Build log 002. Lima ronde red-team terhadap proyek kami sendiri: dua belas temuan, semuanya diperbaiki dan dipublikasikan — termasuk self-DoS kuadratik yang kami buat sendiri.">
+  <title>002 — Memantapkan Mythic — XEY Labs</title>
+  <meta name="description" content="Build log 002. Rotasi kunci, store Redis untuk multi-node, dan pass pemantapan: dua belas temuan dari pengujian adversarial, masing-masing diperbaiki dan dipin regression test.">
   <link rel="canonical" href="https://xeylabs.github.io/id/projects/mythic/red-team.html">
   <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/red-team.html">
   <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/red-team.html">
@@ -49,121 +49,134 @@
           <span>OLEH XEY LABS</span>
           <span>8 MENIT BACA</span>
         </div>
-        <h1>Mythic diserang.</h1>
+        <h1>Memantapkan Mythic.</h1>
         <div class="post-body">
           <p>
-            Sejak entri terakhir, <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            mendapat rotasi kunci, store Redis untuk multi-node, counter
-            tekanan sliding-window — dan bertahan dari lima ronde kami
-            menyerangnya layaknya musuh sungguhan. <strong>Dua belas temuan.
-            Semuanya diperbaiki, dites, dan dipublikasikan.</strong> Ini
-            postingan buktinya.
+            Entri ini mencatat satu pekan kerja di
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            dalam satu tarikan: dua item roadmap M1 dan satu pass
+            pemantapan yang digerakkan pengujian adversarial terhadap
+            server kami sendiri. Pengujian menghasilkan dua belas temuan;
+            semuanya diperbaiki, masing-masing dipin regression test, dan
+            setiap fix diverifikasi ulang dengan reproduksi aslinya sebelum
+            disebut selesai.
           </p>
 
-          <h2>Ronde 1: floor-nya berbohong</h2>
+          <h2>Rotasi kunci tanpa downtime (ADR-0006)</h2>
           <p>
-            Kami menjalankan mythicd hidup-hidup dan menyerangnya black-box.
-            Temuan pertama menyakitkan: klien yang menyelesaikan proof-of-work
-            secara native dalam hitungan milidetik cukup <strong>tidur sampai
-            lewat floor plausibility</strong> lalu menerima token
-            <em>allow</em> tanpa kompute sama sekali. Floor mengukur waktu
-            dinding — dan penyerang mengendalikan jamnya.
+            Sampai pekan ini Mythic menandatangani setiap token keputusan
+            dengan satu kunci Ed25519; merotasinya berarti restart dan
+            membatalkan semua token yang masih hidup. Server kini
+            memegang key ring dengan tepat satu signer aktif. Rotasi
+            berbasis waktu dan berjalan in-process
+            (<code>MYTHIC_KEY_MAX_AGE</code>, default 720h); kunci retired
+            tetap teriklan di JWKS selama
+            <code>MYTHIC_KEY_RETENTION</code> (default 24h) — lebih lama
+            daripada usia maksimum token yang pernah ditandatanganinya.
+            Keystore berupa file JSON yang ditulis atomik; file seed legacy
+            32-byte tetap bisa dimuat dan bermigrasi saat simpan pertama.
+            Origin tetap memverifikasi token secara lokal, memilih kunci
+            lewat klaim <code>kid</code>.
+          </p>
+
+          <h2>Store: Redis untuk multi-node (ADR-0009)</h2>
+          <p>
+            Store in-memory mengikat mythicd ke satu node.
+            <code>MYTHIC_STORE=redis</code> memilih backend Redis:
+            challenge single-use via <code>GETDEL</code> (ambil-dan-hapus
+            atomik) dan counter tekanan sebagai sorted set yang dipangkas
+            satu script Lua. Kedua backend mengimplementasikan counter
+            sliding-window, yang menutup boundary burst jendela tetap.
+            Interface <code>Store</code> kini mengembalikan error: Redis
+            yang tak terjangkau menolak startup, dan outage saat runtime
+            muncul sebagai <code>503 store_unavailable</code> di
+            <code>/v1</code> sementara <code>/healthz</code> tetap terbuka
+            untuk load balancer. Satu contract suite bersama dijalankan
+            terhadap kedua backend (memory dan miniredis) agar semantiknya
+            tidak bisa berbeda.
           </p>
           <p>
-            Lebih parah, kalibrasinya terbalik: floor memodelkan worker
-            50rb H/s, padahal worker <code>crypto.subtle</code> nyata
-            terukur ~400rb H/s. Yang jujur ditandai sebagai bot; bot-nya
-            tinggal menunggu. Kami kalibrasi ulang floor ke kuantil rendah
-            waktu solve yang jujur
-            (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>)
-            dan menulis ulang threat model supaya jujur menyatakan apa yang
-            tak pernah bisa dilakukan floor berbasis jam dinding.
+            Satu catatan, tertulis: store dibagi, kunci penandatanganan
+            tidak. Token dari node A tidak terverifikasi lewat JWKS node B.
+            Verifikasi token lintas node membutuhkan shared keystore
+            (KMS/HSM) — M5, tidak diselesaikan oleh perubahan ini.
           </p>
+
+          <h2>Pass pemantapan: dua belas temuan</h2>
           <p>
-            Ronde 1 juga menutup lubang berukuran 2⁶⁴: rate limiter
-            mengunci IPv6 di /128, jadi satu blok /64 praktis mencetak
-            identitas tanpa batas — proof-of-concept mengirim 5.000 request
-            dari satu blok dan limiter tak tersentuh sekali pun
+            Pengujian adversarial — black-box terhadap server hidup, dengan
+            konfirmasi white-box bila perlu — menghasilkan dua belas
+            temuan. Yang penting, dikelompokkan per area:
+          </p>
+
+          <h3>Transport dan limit</h3>
+          <p>
+            Budget rate-limit baru dikonsumsi setelah validasi: flood
+            invalid-JSON dan site key tak dikenal berjalan tanpa throttling
+            (600 request di 225 req/s, nol 429). Budget kini dihitung
+            sebelum validasi. Limiter mengunci IPv6 di /128 — satu /64
+            mengendalikan 2⁶⁴ identitas (5.000 request dari satu blok, nol
+            tersentuh); counter kini mengagregasi IPv6 ke /64
             (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).
-            Dan sebuah invarian yang terdokumentasi — token tidak pernah
-            hidup lebih lama dari challenge-nya — ternyata tak ditegakkan
-            di mana pun; token 1 jam berhasil dicetak dari challenge 5
-            detik. Sekarang itu clamp.
+            Tidak ada timeout body/read/idle; klien lambat menahan koneksi
+            tanpa batas. <code>ReadTimeout</code>,
+            <code>WriteTimeout</code>, dan <code>IdleTimeout</code> kini
+            diset.
           </p>
 
-          <h2>Ronde 2: jalur yang tak pernah diuji orang</h2>
+          <h3>Ekonomi challenge</h3>
           <p>
-            Jalur yang invalid ternyata yang paling lembut. Tiga ratus site
-            key salah, tiga ratus JSON rusak — dilayani di 225 req/s dengan
-            <strong>nol rate limiting</strong>, karena limiter baru jalan
-            setelah validasi. Sekarang sampah pun menguras budget si
-            penyerang sendiri. Klien yang membaca body pelan bisa menahan
-            koneksinya selamanya — dulu tak ada read timeout; sekarang ada.
-            <code>MYTHIC_BASE_DIFFICULTY</code> negatif menghasilkan
-            challenge yang dipenuhi nonce apa pun, <strong>token tanpa kerja
-            karena foot-gun operator</strong>; konfigurasi kini divalidasi
-            saat startup dan yang tak masuk akal menolak melayani. Trailing
-            JSON data dulu diterima diam-diam; sekarang ditolak. Dan dua
-            proses yang berbagi satu keystore bisa split-brain kunci
-            penandatanganan tanpa suara — keystore kini menolak menimpa file
-            yang berubah di bawahnya.
+            Floor solve-time memodelkan worker 50rb H/s; worker
+            <code>crypto.subtle</code> terukur ~400rb H/s, sehingga klien
+            jujur ditandai implausible — dan klien mana pun bisa sekadar
+            menunda verifikasi melewati floor. Floor kini kuantil rendah
+            dari waktu solve jujur (<code>2^d / (2M × 32)</code>,
+            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>):
+            false positive ≤ ~6% kasus terburuk, jawaban kelas GPU
+            memicunya ~96%. Threat model menyatakan bahwa floor berbasis
+            jam dinding tidak bisa menangkap klien yang menunda verifikasi
+            — itu tugas lapisan behavioral (M2).
           </p>
 
-          <h2>Ronde 5: kami menyerang yang baru kami bangun</h2>
+          <h3>Token dan konfigurasi</h3>
           <p>
-            Temuan paling tajam datang dari kode terbaru — milik kami
-            sendiri. Counter sliding-window menyimpan satu entri per hit,
-            dan request yang sudah di-rate-limit tetap dihitung. Satu juta
-            hit dari satu identitas: <mark>+16,4 MB heap, dan 595 detik
-            CPU</mark> — prune memindai seluruh riwayat di setiap request.
-            Self-DoS kuadratik, dipicu oleh serangan termurah yang ada:
-            membanjiri dan menelan 429.
-          </p>
-          <p>
-            Counter kini men-cap riwayat yang disimpan pada limit dan
-            melaporkan saturasi. Menjalankan flood yang sama persis terhadap
-            fix-nya: <strong>+0,00 MB, 714 milidetik.</strong> O(1) per hit.
-            Ronde yang sama menemukan bahwa tuning jahat membocorkan skor
-            risiko 500 ke dalam token ter-tanda-tangan (kontraknya 0–100;
-            sekarang di-clamp), dan membuktikan sesuatu yang kami
-            overklaim: dengan store Redis bersama, token dari satu node tetap
-            tak terverifikasi lewat JWKS node lain, karena kunci
-            penandatanganan itu per-node. Dokumentasi kini mengatakannya
-            apa adanya, bukan berpura-pura multi-node sudah selesai.
+            Invarian terdokumentasi bahwa token tidak pernah hidup lebih
+            lama dari challenge-nya tidak ditegakkan — token 1 jam
+            diterbitkan dari challenge 5 detik. <code>TokenTTL</code> kini
+            di-clamp ke <code>ChallengeTTL</code>. Tuning jahat
+            (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) membocorkan skor
+            risiko 500 ke token ter-tanda-tangan; skor di-clamp ke 0–100
+            dan penalty di atas 100 menolak startup.
+            <code>MYTHIC_BASE_DIFFICULTY</code> negatif menerbitkan
+            challenge yang dipenuhi nonce apa pun; konfigurasi divalidasi
+            saat startup dan nilai di luar rentang menolak melayani.
           </p>
 
-          <h2>Mythic sekarang sebenarnya apa</h2>
+          <h3>Penanganan state</h3>
           <p>
-            <strong>Sudah jadi:</strong> PoW SHA-256 adaptif dengan floor
-            terkalibrasi kuantil; risk engine deterministik; token
-            keputusan Ed25519 dengan <strong>rotasi kunci tanpa
-            downtime</strong> (multi-key JWKS, ADR-0006);
-            <strong>store Redis</strong> untuk multi-node dengan challenge
-            single-use atomik dan counter sliding-window (ADR-0009),
-            fail-closed di tepi HTTP — outage store muncul sebagai 503,
-            tidak pernah sebagai token yang terbit diam-diam; SDK JS; suite
-            contract test yang mengunci kedua backend store pada semantik
-            yang identik.
-          </p>
-          <p>
-            <strong>Jujur, belum selesai:</strong> penyerang sabar yang
-            solve cepat lalu menunda verifikasi (butuh lapisan behavioral,
-            M2); serangan terdistribusi dengan identitas segar (butuh
-            fingerprint jaringan, M1); verifikasi token lintas node (butuh
-            shared keystore, M5). Threat model mencantumkan semuanya —
-            tertulis, sebelum ada yang perlu bertanya.
+            Dua proses yang berbagi satu keystore bisa bertabrakan di file
+            temp yang sama atau split-brain kunci penandatanganan tanpa
+            suara; nama temp kini unik per proses dan save menolak
+            menimpa file yang berubah sejak dimuat. Byte sisa setelah nilai
+            JSON dulu diabaikan diam-diam; kini ditolak. Counter
+            sliding-window menyimpan satu entri per hit — termasuk yang
+            sudah di-rate-limit — sehingga sejuta hit dari satu identitas
+            biayanya ~16,4 MB heap dan 595 detik CPU. Counter kini
+            saturasi di <code>IPLimit+1</code>: flood yang sama biayanya
+            +0,00 MB dan 714 ms.
           </p>
 
-          <h2>Kenapa kami begini</h2>
+          <h2>Verifikasi</h2>
           <p>
-            Kami bilang laporan bypass adalah kontribusi paling berharga
-            yang bisa diterima proyek ini. Maka itu harus dimulai dari
-            kami sendiri. Lima ronde, dua belas temuan, tiga ADR, setiap
-            fix dipin regression test, setiap re-attack dijalankan ulang
-            terhadap fix-nya — <strong>lab makan dogfood-nya sendiri
-            duluan.</strong>
+            Setiap temuan punya reproduksi; setiap fix punya regression test
+            (<code>go test ./... -race</code>, plus typecheck dan test SDK),
+            dan setiap fix diverifikasi ulang dengan reproduksi aslinya.
+            Yang masih terbuka terdokumentasi di threat model: solver sabar
+            yang menunda verifikasi (M2, sinyal behavioral), serangan
+            terdistribusi dengan identitas segar (M1, fingerprint
+            jaringan), dan keystore per-node (M5, KMS/HSM bersama).
           </p>
-          <p class="post-sign">— XEY LABS, HARI RED TEAM</p>
+          <p class="post-sign">— XEY LABS</p>
         </div>
       </article>
 
