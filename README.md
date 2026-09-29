@@ -24,6 +24,7 @@ projects/log/index.html    build log — blog khusus proyek (terpisah dari the l
 projects/mythic/      halaman detail proyek Mythic (+ build log per proyek)
 feed.xml              RSS The Log (blog biasa) · projects/feed.xml = RSS Build Log
 privacy.html          privacy notice (+ /{lang}/privacy.html)
+legal.html            legal notice (+ /{lang}/legal.html)
 assets/style.css      shared stylesheet (design system)
 sitemap.xml + robots.txt  untuk SEO
 LICENSE               MIT

@@ -109,42 +109,6 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://xeylabs.github.io/rules.html</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/rules.html"/>
-    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/rules.html"/>
-    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/rules.html"/>
-    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/rules.html"/>
-    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/rules.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/rules.html"/>
-  </url>
-  <url>
-    <loc>https://xeylabs.github.io/id/rules.html</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://xeylabs.github.io/zh/rules.html</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://xeylabs.github.io/ja/rules.html</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://xeylabs.github.io/kr/rules.html</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
     <loc>https://xeylabs.github.io/projects/</loc>
     <lastmod>2026-09-29</lastmod>
     <changefreq>weekly</changefreq>
@@ -191,5 +155,41 @@
     <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/ship-public.html"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/ship-public.html"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/ship-public.html"/>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/legal.html</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/legal.html"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/legal.html"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/legal.html"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/legal.html"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/legal.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/legal.html"/>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/id/legal.html</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/zh/legal.html</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/ja/legal.html</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://xeylabs.github.io/kr/legal.html</loc>
+    <lastmod>2026-09-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>
