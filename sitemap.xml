@@ -193,6 +193,18 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://xeylabs.github.io/projects/mythic/m1-complete.html</loc>
+    <lastmod>2026-10-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/m1-complete.html"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/m1-complete.html"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/m1-complete.html"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/m1-complete.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/projects/mythic/m1-complete.html"/>
+  </url>
+  <url>
     <loc>https://xeylabs.github.io/projects/mythic/red-team.html</loc>
     <lastmod>2026-09-29</lastmod>
     <changefreq>monthly</changefreq>

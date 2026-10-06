@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>003 — M1 완료 — XEY Labs</title>
+  <meta name="description" content="Build log 003. Mythic's M1 milestone is complete: JA4 fingerprinting, ASN scoring, a packaged Web Worker for PoW solving, and origin verification helpers for Node.js and Python.">
+  <link rel="canonical" href="https://xeylabs.github.io/kr/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/kr/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/kr/projects/mythic/m1-complete.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="Build Log — XEY Labs" href="https://xeylabs.github.io/projects/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">콘텐츠로 건너뛰기</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — MYTHIC / 003</span>
+      <span class="langsw mono" aria-label="Language">
+        <a href="/projects/mythic/m1-complete.html">EN</a><span class="sep">/</span>
+        <a href="/id/projects/mythic/m1-complete.html">ID</a><span class="sep">/</span>
+        <a href="/zh/projects/mythic/m1-complete.html">中文</a><span class="sep">/</span>
+        <a href="/ja/projects/mythic/m1-complete.html">日本語</a><span class="sep">/</span>
+        <strong class="cur">한국어</strong>
+      </span>
+      <span class="mono">
+        <a href="/kr/projects/log/index.html">← BUILD LOG</a>
+        <a href="index.html">PROJECT</a>
+        <a href="https://github.com/xeylabs/mythic" rel="noopener">REPO ↗</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>003 / BUILD</span>
+          <span>06.10.2026</span>
+          <span>BY XEY LABS</span>
+          <span>6분 읽기</span>
+        </div>
+        <h1>M1 완료.</h1>
+        <div class="post-body">
+          <p>
+            This entry closes the M1 milestone for
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
+            four roadmap items that were still open after the hardening pass.
+            Each is implemented, tested, documented, and merged — no
+            half-done work ships.
+          </p>
+
+          <h2>JA4 핑거프린팅 (ADR-0010)</h2>
+          <p>
+            TLS client fingerprints distinguish real browsers from scripted
+            HTTP clients. The server reads <code>X-Mythic-JA4</code> (set by
+            a trusted proxy that terminates TLS) and scores the fingerprint
+            against known-browser patterns. Malformed or prefix-only values
+            are rejected from receiving the known-browser discount — a
+            parroted fingerprint remains a documented bypass, so JA4 is
+            advisory only, capped at a small risk contribution.
+          </p>
+
+          <h2>ASN 스코어링 (ADR-0010)</h2>
+          <p>
+            Autonomous System Numbers add a network-level signal: datacenter
+            and hosting ASNs score higher than residential ISPs. A new
+            <code>ASNLookup</code> component resolves client IPs via a
+            MaxMind GeoLite2-ASN database (<code>MYTHIC_ASN_DB</code>).
+            Empty path means the signal is disabled — valid. A configured
+            path that fails to open refuses startup: fail-closed on
+            misconfiguration, not silent degradation.
+          </p>
+
+          <h2>PoW 솔빙용 Web Worker</h2>
+          <p>
+            The proof-of-work grind ran on the main thread, freezing the
+            page at high difficulty. <code>solveInWorker()</code> packages
+            the solver as a Web Worker via Blob URL — no separate worker
+            file to host, works with any bundler. It falls back to
+            main-thread solving when Workers are unavailable (SSR, Node).
+            <code>MythicClient</code> uses the worker by default and
+            auto-starts behavioral collection on construction.
+          </p>
+
+          <h2>오리진 검증 헬퍼</h2>
+          <p>
+            Decision tokens were only verifiable in Go. Origins running
+            Node.js or Python can now verify tokens locally with new
+            helpers: <code>parsePublicKey</code>/<code>verifyToken</code>
+            for Node, <code>parse_public_key</code>/<code>verify_token</code>
+            for Python. Both enforce Ed25519 signatures, expiry, and
+            canonical base64url encoding. Cross-language verified: a token
+            generated by the Go server verifies in both.
+          </p>
+
+          <h2>검증</h2>
+          <p>
+            <code>go vet</code> clean, <code>go test ./... -race</code>
+            green, SDK <code>tsc --noEmit</code> and <code>bun test</code>
+            green (15 tests), Python <code>pytest</code> green (6 tests).
+            Every new signal documents its bypass first, per the project's
+            rule. What remains: M2 (behavioral biometrics, closing the
+            delay-attack gap) and M5 (shared keystore for multi-node
+            verification).
+          </p>
+          <p class="post-sign">— XEY LABS</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="/kr/projects/log/index.html">← ALL ENTRIES</a>
+        <a href="index.html">← PROJECT</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/privacy.html">PRIVACY</a>
+        <a href="/legal.html">LEGAL</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

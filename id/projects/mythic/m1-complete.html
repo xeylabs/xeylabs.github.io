@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>003 — Menyelesaikan M1 — XEY Labs</title>
+  <meta name="description" content="Build log 003. Milestone M1 Mythic selesai: JA4 fingerprinting, ASN scoring, Web Worker terkemas untuk PoW solving, dan helper verifikasi origin untuk Node.js dan Python.">
+  <link rel="canonical" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="zh-Hans" href="https://xeylabs.github.io/zh/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="ja" href="https://xeylabs.github.io/ja/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="ko" href="https://xeylabs.github.io/kr/projects/mythic/m1-complete.html">
+  <link rel="alternate" hreflang="x-default" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
+  <meta name="theme-color" content="#F4F3EE">
+  <link rel="alternate" type="application/rss+xml" title="Build Log — XEY Labs" href="https://xeylabs.github.io/projects/feed.xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101210'/%3E%3Crect x='18' y='18' width='14' height='14' fill='%23C6F531'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../../assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Lewati ke konten</a>
+
+  <div class="frame">
+    <header class="topbar">
+      <span class="mono"><strong>XEY LABS</strong> — MYTHIC / 003</span>
+      <span class="langsw mono" aria-label="Language">
+        <a href="/projects/mythic/m1-complete.html">EN</a><span class="sep">/</span>
+        <strong class="cur">ID</strong><span class="sep">/</span>
+        <a href="/zh/projects/mythic/m1-complete.html">中文</a><span class="sep">/</span>
+        <a href="/ja/projects/mythic/m1-complete.html">日本語</a><span class="sep">/</span>
+        <a href="/kr/projects/mythic/m1-complete.html">한국어</a>
+      </span>
+      <span class="mono">
+        <a href="/id/projects/log/index.html">← BUILD LOG</a>
+        <a href="index.html">PROJECT</a>
+        <a href="https://github.com/xeylabs/mythic" rel="noopener">REPO ↗</a>
+        <a href="https://github.com/xeylabs" rel="noopener">GITHUB ↗</a>
+      </span>
+    </header>
+
+    <main id="main">
+      <article class="post">
+        <div class="post-meta mono">
+          <span>003 / BUILD</span>
+          <span>06.10.2026</span>
+          <span>BY XEY LABS</span>
+          <span>6 MIN BACA</span>
+        </div>
+        <h1>Menyelesaikan M1.</h1>
+        <div class="post-body">
+          <p>
+            Entri ini menutup milestone M1 untuk
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
+            empat item roadmap yang masih terbuka setelah hardening pass.
+            Semuanya diimplementasikan, ditest, didokumentasikan, dan di-merge — tidak ada
+            pekerjaan setengah-setengah yang dikirim.
+          </p>
+
+          <h2>JA4 fingerprinting (ADR-0010)</h2>
+          <p>
+            Fingerprint klien TLS membedakan browser asli dari klien HTTP
+            ter-script. Server membaca <code>X-Mythic-JA4</code> (di-set oleh
+            proxy tepercaya yang men-terminasi TLS) dan menilai fingerprint
+            terhadap pola browser yang dikenal. Nilai malformed atau hanya-prefix
+            ditolak untuk menerima diskon known-browser —
+            fingerprint yang diparrot tetap menjadi bypass terdokumentasi, jadi JA4
+            hanya advisory, dibatasi pada kontribusi risiko kecil.
+          </p>
+
+          <h2>ASN scoring (ADR-0010)</h2>
+          <p>
+            Autonomous System Numbers menambah sinyal level jaringan: ASN
+            datacenter dan hosting mendapat skor lebih tinggi dari ISP residensial. Komponen
+            <code>ASNLookup</code> baru me-resolve IP klien via
+            database MaxMind GeoLite2-ASN (<code>MYTHIC_ASN_DB</code>).
+            Path kosong berarti sinyal dinonaktifkan — valid. Path yang
+            dikonfigurasi tapi gagal dibuka menolak startup: fail-closed pada
+            miskonfigurasi, bukan degradasi diam-diam.
+          </p>
+
+          <h2>Web Worker untuk PoW solving</h2>
+          <p>
+            Grind proof-of-work berjalan di main thread, membekukan
+            halaman pada difficulty tinggi. <code>solveInWorker()</code> mengemas
+            solver sebagai Web Worker via Blob URL — tidak perlu file worker
+            terpisah untuk di-host, bekerja dengan bundler apapun. Fallback ke
+            solving main-thread saat Worker tidak tersedia (SSR, Node).
+            <code>MythicClient</code> menggunakan worker secara default dan
+            auto-start pengumpulan behavioral saat konstruksi.
+          </p>
+
+          <h2>Helper verifikasi origin</h2>
+          <p>
+            Token keputusan hanya bisa diverifikasi di Go. Origin yang
+            menjalankan Node.js atau Python kini bisa memverifikasi token secara lokal dengan
+            helper baru: <code>parsePublicKey</code>/<code>verifyToken</code>
+            untuk Node, <code>parse_public_key</code>/<code>verify_token</code>
+            untuk Python. Keduanya menegakkan tanda tangan Ed25519, expiry, dan
+            encoding base64url kanonis. Terverifikasi lintas bahasa: token yang
+            di-generate server Go terverifikasi di keduanya.
+          </p>
+
+          <h2>Verifikasi</h2>
+          <p>
+            <code>go vet</code> bersih, <code>go test ./... -race</code>
+            hijau, SDK <code>tsc --noEmit</code> dan <code>bun test</code>
+            hijau (15 test), Python <code>pytest</code> hijau (6 test).
+            Setiap sinyal baru mendokumentasikan bypass-nya terlebih dahulu, sesuai
+            aturan proyek. Yang tersisa: M2 (behavioral biometrics, menutup
+            celah delay-attack) dan M5 (shared keystore untuk verifikasi
+            multi-node).
+          </p>
+          <p class="post-sign">— XEY LABS</p>
+        </div>
+      </article>
+
+      <div class="backrow">
+        <a href="/id/projects/log/index.html">← ALL ENTRIES</a>
+        <a href="index.html">← PROJECT</a>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-row mono">
+        <span>© 2026 XEY LABS</span>
+        <span>BUILT IN PUBLIC</span>
+        <a href="/privacy.html">PRIVACY</a>
+        <a href="/legal.html">LEGAL</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
