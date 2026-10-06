@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>003 — Completing M1 — XEY Labs</title>
-  <meta name="description" content="Build log 003. Mythic's M1 milestone is complete: JA4 fingerprinting, ASN scoring, a packaged Web Worker for PoW solving, and origin verification helpers for Node.js and Python.">
+  <meta name="description" content="Build log 003. M1 complete: JA4 TLS fingerprinting, ASN network scoring, Web Worker PoW solver, and native origin verification for Node.js and Python — with test results and stated limitations.">
   <link rel="canonical" href="https://xeylabs.github.io/projects/mythic/m1-complete.html">
   <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/m1-complete.html">
   <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
@@ -49,69 +49,114 @@
           <span>BY XEY LABS</span>
           <span>6 MIN READ</span>
         </div>
-        <h1>Completing M1.</h1>
+        <h1>M1 Complete: Network Signals, Worker Solver, Origin SDKs.</h1>
         <div class="post-body">
           <p>
-            This entry closes the M1 milestone for
+            M1 is done. Four items closed in
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
-            four roadmap items that were still open after the hardening pass.
-            Each is implemented, tested, documented, and merged — no
-            half-done work ships.
+            JA4 TLS fingerprinting, ASN-based network scoring, a packaged Web
+            Worker for proof-of-work, and origin verification helpers for
+            Node.js and Python. Commits
+            <code>bc87ed9</code> through <code>c7e4fc3</code>.
           </p>
 
-          <h2>JA4 fingerprinting (ADR-0010)</h2>
+          <h2>JA4 fingerprinting</h2>
           <p>
-            TLS client fingerprints distinguish real browsers from scripted
-            HTTP clients. The server reads <code>X-Mythic-JA4</code> (set by
-            a trusted proxy that terminates TLS) and scores the fingerprint
-            against known-browser patterns. Malformed or prefix-only values
-            are rejected from receiving the known-browser discount — a
-            parroted fingerprint remains a documented bypass, so JA4 is
-            advisory only, capped at a small risk contribution.
+            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0010-ja4-asn-signals.md" rel="noopener">ADR-0010</a>.
+            The server reads the JA4 fingerprint from
+            <code>X-Mythic-JA4</code>, set by the terminating proxy — never
+            from the client directly, since any client-supplied value is
+            attacker-controlled. Fingerprints are matched against
+            known-browser JA4 patterns; a match applies a small risk
+            discount, capped so it cannot single-handedly clear a
+            challenge. Malformed values and prefix-only matches are
+            rejected from the discount path entirely.
+          </p>
+          <p>
+            Stated limitation: JA4 is advisory. A client that parrots a
+            real browser's fingerprint byte-for-byte is indistinguishable
+            at this layer. The discount is small precisely because the
+            signal is spoofable — it raises the cost of naive scripting,
+            nothing more.
           </p>
 
-          <h2>ASN scoring (ADR-0010)</h2>
+          <h2>ASN scoring</h2>
           <p>
-            Autonomous System Numbers add a network-level signal: datacenter
-            and hosting ASNs score higher than residential ISPs. A new
-            <code>ASNLookup</code> component resolves client IPs via a
+            Same ADR. Client IPs resolve to Autonomous System Numbers via a
             MaxMind GeoLite2-ASN database (<code>MYTHIC_ASN_DB</code>).
-            Empty path means the signal is disabled — valid. A configured
-            path that fails to open refuses startup: fail-closed on
-            misconfiguration, not silent degradation.
+            Datacenter, hosting, and VPN-exit ASNs contribute risk;
+            residential ISP ASNs do not. The lookup is nil-safe throughout:
+            an empty <code>MYTHIC_ASN_DB</code> disables the signal cleanly,
+            while a configured path that fails to open is fatal at startup.
+            Misconfiguration fails closed; absence degrades silently by
+            design — the operator chose not to enable it.
+          </p>
+          <p>
+            Both JA4 and ASN feed <code>risk.Input</code> and are evaluated
+            in the challenge and verify paths. Contributions are capped in
+            <code>risk.Config</code> and validated at startup; hostile
+            tuning values refuse to serve.
           </p>
 
-          <h2>Web Worker for PoW solving</h2>
+          <h2>Web Worker PoW solver</h2>
           <p>
-            The proof-of-work grind ran on the main thread, freezing the
-            page at high difficulty. <code>solveInWorker()</code> packages
-            the solver as a Web Worker via Blob URL — no separate worker
-            file to host, works with any bundler. It falls back to
-            main-thread solving when Workers are unavailable (SSR, Node).
-            <code>MythicClient</code> uses the worker by default and
-            auto-starts behavioral collection on construction.
+            The SHA-256 grind previously ran on the main thread — at
+            difficulty 24+ the page froze for seconds. The SDK now ships
+            <code>solveInWorker()</code>, which stringifies a
+            self-contained solver into a Blob URL and runs it off-thread.
+            No separate worker file to deploy; no bundler plugin required.
+            Progress callbacks fire every 2048 iterations;
+            <code>AbortSignal</code> terminates the worker and revokes the
+            URL. Where <code>Worker</code> is undefined (SSR, Node), it
+            falls back to the main-thread <code>solve()</code> — slower,
+            never broken.
+          </p>
+          <p>
+            <code>MythicClient</code> takes <code>useWorker</code> (default
+            <code>true</code>) and now also auto-starts the behavioral
+            collector on construction, attaching features to challenge
+            hints. One client, one flow, no manual wiring.
           </p>
 
-          <h2>Origin verification helpers</h2>
+          <h2>Origin verification: Node.js and Python</h2>
           <p>
-            Decision tokens were only verifiable in Go. Origins running
-            Node.js or Python can now verify tokens locally with new
-            helpers: <code>parsePublicKey</code>/<code>verifyToken</code>
-            for Node, <code>parse_public_key</code>/<code>verify_token</code>
-            for Python. Both enforce Ed25519 signatures, expiry, and
-            canonical base64url encoding. Cross-language verified: a token
-            generated by the Go server verifies in both.
+            Decision tokens were verifiable only in Go
+            (<code>server/xtoken</code>). Origins now get native helpers:
+          </p>
+          <p>
+            <code>sdk/js/src/verify.ts</code> —
+            <code>parsePublicKey(x)</code> wraps the JWKS raw key in DER
+            SPKI; <code>verifyToken(pub, token)</code> checks the Ed25519
+            signature over raw payload bytes (no pre-hash), enforces
+            canonical base64url re-encoding, and rejects expired tokens.
+          </p>
+          <p>
+            <code>sdk/python/mythic/verify.py</code> — same semantics via
+            the <code>cryptography</code> package:
+            <code>parse_public_key</code>, <code>verify_token</code>,
+            <code>TokenClaims</code> dataclass, <code>TokenError</code> on
+            any rejection.
+          </p>
+          <p>
+            Verified cross-language: a token minted by the Go server
+            verifies in both. Twelve tests total (six per language)
+            covering valid tokens, wrong keys, expiry, malformed input,
+            bad keys, and tampered payloads.
           </p>
 
-          <h2>Verification</h2>
+          <h2>Test results</h2>
           <p>
-            <code>go vet</code> clean, <code>go test ./... -race</code>
-            green, SDK <code>tsc --noEmit</code> and <code>bun test</code>
-            green (15 tests), Python <code>pytest</code> green (6 tests).
-            Every new signal documents its bypass first, per the project's
-            rule. What remains: M2 (behavioral biometrics, closing the
-            delay-attack gap) and M5 (shared keystore for multi-node
-            verification).
+            <code>go vet</code> clean.
+            <code>go test ./... -race -count=1</code> green across all
+            packages. <code>tsc --noEmit</code> clean,
+            <code>bun test</code> 15/15. <code>pytest</code> 6/6.
+            Per project rule, every new signal's bypass is documented
+            before the signal ships — see ADR-0010 § "Bypasses".
+          </p>
+          <p>
+            Remaining: M2 behavioral biometrics (closes the delay-attack
+            gap the solve-time floor cannot cover) and M5 shared keystore
+            for cross-node token verification.
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

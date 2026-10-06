@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>003 — 完成 M1 — XEY Labs</title>
-  <meta name="description" content="Build log 003. Mythic's M1 milestone is complete: JA4 fingerprinting, ASN scoring, a packaged Web Worker for PoW solving, and origin verification helpers for Node.js and Python.">
+  <title>003 — M1 完成：网络信号、Worker 求解器、源站 SDK — XEY Labs</title>
+  <meta name="description" content="Build log 003. M1 complete: JA4 TLS fingerprinting, ASN network scoring, Web Worker PoW solver, and native origin verification for Node.js and Python — with test results and stated limitations.">
   <link rel="canonical" href="https://xeylabs.github.io/zh/projects/mythic/m1-complete.html">
   <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/zh/projects/mythic/m1-complete.html">
   <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
@@ -49,14 +49,15 @@
           <span>BY XEY LABS</span>
           <span>阅读 6 分钟</span>
         </div>
-        <h1>完成 M1。</h1>
+        <h1>M1 完成：网络信号、Worker 求解器、源站 SDK。</h1>
         <div class="post-body">
           <p>
-            This entry closes the M1 milestone for
+            M1 is done. Four items closed in
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
-            four roadmap items that were still open after the hardening pass.
-            Each is implemented, tested, documented, and merged — no
-            half-done work ships.
+            JA4 TLS fingerprinting, ASN-based network scoring, a packaged Web
+            Worker for proof-of-work, and origin verification helpers for
+            Node.js and Python. Commits
+            <code>bc87ed9</code> through <code>c7e4fc3</code>.
           </p>
 
           <h2>JA4 指纹识别 (ADR-0010)</h2>
