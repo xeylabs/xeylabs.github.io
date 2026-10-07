@@ -59,185 +59,186 @@
           <span>002 / BUILD</span>
           <span>29.09.2026</span>
           <span>OLEH XEY LABS</span>
-          <span>8 MENIT BACA</span>
+          <span>10 MENIT BACA</span>
         </div>
         <h1>Memantapkan Mythic.</h1>
-        <div class="post-body">
+                <div class="post-body">
           <p>
             Selama satu pekan kami berhenti membangun
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            dan mencoba merusaknya — black-box terhadap server yang hidup,
-            white-box di mana black box tak cukup. Pekan itu menghasilkan
-            dua belas temuan. Semuanya diperbaiki, dipin regression test,
-            dan diverifikasi ulang terhadap reproduksi aslinya sebelum kami
-            menyebutnya selesai. Entri ini juga mencatat dua item roadmap M1
-            yang mendarat di pass yang sama: rotasi kunci dan store Redis.
+                        <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+                        dan mencoba merusaknya — black-box terhadap server yang hidup,
+                        white-box di mana black box tak cukup. Pekan itu menghasilkan
+                        dua belas temuan. Semuanya diperbaiki, dipin regression test,
+                        dan diverifikasi ulang terhadap reproduksi aslinya sebelum kami
+                        menyebutnya selesai. Entri ini juga mencatat dua item roadmap M1
+                        yang mendarat di pass yang sama: rotasi kunci dan store Redis.
           </p>
 
-          <h2>Rotasi kunci tanpa downtime (ADR-0006)</h2>
+          <h2>Rotasi kunci tanpa downtime</h2>
           <p>
             Sampai pekan ini Mythic menandatangani setiap token keputusan
-            dengan satu kunci Ed25519; merotasinya berarti restart dan
-            membatalkan semua token yang masih hidup. Server kini
-            memegang key ring dengan tepat satu signer aktif. Rotasi
-            berbasis waktu dan berjalan in-process
-            (<code>MYTHIC_KEY_MAX_AGE</code>, default 720h); kunci retired
-            tetap teriklan di JWKS selama
-            <code>MYTHIC_KEY_RETENTION</code> (default 24h) — lebih lama
-            daripada usia maksimum token yang pernah ditandatanganinya.
-            Keystore berupa file JSON yang ditulis atomik; file seed legacy
-            32-byte tetap bisa dimuat dan bermigrasi saat simpan pertama.
-            Origin tetap memverifikasi token secara lokal, memilih kunci
-            lewat klaim <code>kid</code>.
+                        dengan satu kunci Ed25519; merotasinya berarti restart dan
+                        membatalkan semua token yang masih hidup. Server kini memegang
+                        key ring dengan tepat satu signer aktif
+                        (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0006-key-rotation.md" rel="noopener">ADR-0006</a>).
+                        Rotasi berbasis waktu dan berjalan in-process
+                        (<code>MYTHIC_KEY_MAX_AGE</code>, default 720h). Kunci retired
+                        tetap teriklan di JWKS selama
+                        <code>MYTHIC_KEY_RETENTION</code> (default 24h) — sengaja lebih
+                        lama daripada usia maksimum token yang pernah ditandatanganinya,
+                        sehingga token yang sedang terbang tak pernah rusak di tengah
+                        rotasi:
           </p>
 
           <div class="fig" role="img" aria-label="Lini masa rotasi kunci: kunci A menandatangani hingga rotasi, kunci B mengambil alih, kunci A tetap di JWKS selama jendela retensi yang lebih lama dari usia token mana pun.">
-            <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
-              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">LINI MASA ROTASI KUNCI</text>
-              <g font-size="11" fill="#55584F">
-                <text x="20" y="70">penandatanganan</text>
-                <text x="20" y="130">JWKS mengiklankan</text>
-                <text x="20" y="190">usia token</text>
-              </g>
-              <g stroke="#D9D7CE" stroke-width="1">
-                <line x1="180" y1="60" x2="940" y2="60"/>
-                <line x1="180" y1="120" x2="940" y2="120"/>
-                <line x1="180" y1="180" x2="940" y2="180"/>
-              </g>
-              <g font-size="11" text-anchor="middle">
-                <rect x="180" y="44" width="380" height="32" fill="#101210"/>
-                <text x="370" y="65" fill="#F4F3EE">kunci A menandatangani</text>
-                <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
-                <text x="750" y="65" fill="#101210">kunci B menandatangani</text>
-                <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
-                <text x="460" y="125" fill="#101210">kunci A + kunci B</text>
-                <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
-                <text x="840" y="125" fill="#101210">kunci B</text>
-                <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
-                <text x="270" y="185" fill="#101210">TTL token</text>
-              </g>
-              <g font-size="10" fill="#55584F" text-anchor="middle">
-                <text x="560" y="215">rotasi (MYTHIC_KEY_MAX_AGE)</text>
-                <text x="740" y="215">A keluar (MYTHIC_KEY_RETENTION)</text>
-              </g>
-              <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
-              <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
-            </svg>
-            <p class="figcap mono">GBR. 1 — Kunci retired hidup lebih lama dari token yang ditandatanganinya. Rotasi tak pernah membatalkan token yang masih hidup.</p>
-          </div>
+                      <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+                        <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">LINI MASA ROTASI KUNCI</text>
+                        <g font-size="11" fill="#55584F">
+                          <text x="20" y="70">penandatanganan</text>
+                          <text x="20" y="130">JWKS mengiklankan</text>
+                          <text x="20" y="190">usia token</text>
+                        </g>
+                        <g stroke="#D9D7CE" stroke-width="1">
+                          <line x1="180" y1="60" x2="940" y2="60"/>
+                          <line x1="180" y1="120" x2="940" y2="120"/>
+                          <line x1="180" y1="180" x2="940" y2="180"/>
+                        </g>
+                        <g font-size="11" text-anchor="middle">
+                          <rect x="180" y="44" width="380" height="32" fill="#101210"/>
+                          <text x="370" y="65" fill="#F4F3EE">kunci A menandatangani</text>
+                          <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                          <text x="750" y="65" fill="#101210">kunci B menandatangani</text>
+                          <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                          <text x="460" y="125" fill="#101210">kunci A + kunci B</text>
+                          <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                          <text x="840" y="125" fill="#101210">kunci B</text>
+                          <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
+                          <text x="270" y="185" fill="#101210">TTL token</text>
+                        </g>
+                        <g font-size="10" fill="#55584F" text-anchor="middle">
+                          <text x="560" y="215">rotasi (MYTHIC_KEY_MAX_AGE)</text>
+                          <text x="740" y="215">A keluar (MYTHIC_KEY_RETENTION)</text>
+                        </g>
+                        <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+                        <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+                      </svg>
+                      <p class="figcap mono">GBR. 1 — Kunci retired hidup lebih lama dari token yang ditandatanganinya. Rotasi tak pernah membatalkan token yang masih hidup.</p>
+                    </div>
 
           <p>
-                      Keystore berupa file JSON yang ditulis atomik; file seed legacy
-                      32-byte tetap bisa dimuat dan bermigrasi saat simpan pertama.
-                      Origin tetap memverifikasi token secara lokal, memilih kunci
-                      lewat klaim <code>kid</code> — tanpa perlu panggilan koordinasi.
-                    </p>
+            Keystore berupa file JSON yang ditulis atomik; file seed legacy
+                        32-byte tetap bisa dimuat dan bermigrasi saat simpan pertama.
+                        Origin tetap memverifikasi token secara lokal, memilih kunci
+                        lewat klaim <code>kid</code> — tanpa perlu panggilan koordinasi.
+          </p>
 
-
-          <h2>Store: Redis untuk multi-node (ADR-0009)</h2>
+          <h2>Store yang bertahan lebih dari satu node</h2>
           <p>
-            Store in-memory mengikat mythicd ke satu node.
-            <code>MYTHIC_STORE=redis</code> memilih backend Redis:
-            challenge single-use via <code>GETDEL</code> (ambil-dan-hapus
-            atomik) dan counter tekanan sebagai sorted set yang dipangkas
-            satu script Lua. Kedua backend mengimplementasikan counter
-            sliding-window, yang menutup boundary burst jendela tetap.
-            Interface <code>Store</code> kini mengembalikan error: Redis
-            yang tak terjangkau menolak startup, dan outage saat runtime
-            muncul sebagai <code>503 store_unavailable</code> di
-            <code>/v1</code> sementara <code>/healthz</code> tetap terbuka
-            untuk load balancer. Satu contract suite bersama dijalankan
-            terhadap kedua backend (memory dan miniredis) agar semantiknya
-            tidak bisa berbeda.
+            Store in-memory mengikat mythicd ke satu node
+                        (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0009-redis-store.md" rel="noopener">ADR-0009</a>).
+                        <code>MYTHIC_STORE=redis</code> memilih backend Redis:
+                        challenge single-use via <code>GETDEL</code> (ambil-dan-hapus
+                        atomik) dan counter tekanan sebagai sorted set yang dipangkas
+                        satu script Lua. Kedua backend mengimplementasikan counter
+                        sliding-window, yang menutup boundary burst jendela tetap.
+                        Interface <code>Store</code> kini mengembalikan error: Redis
+                        yang tak terjangkau menolak startup, dan outage saat runtime
+                        muncul sebagai <code>503 store_unavailable</code> di
+                        <code>/v1</code> sementara <code>/healthz</code> tetap terbuka
+                        untuk load balancer. Satu contract suite bersama dijalankan
+                        terhadap kedua backend (memory dan miniredis) agar semantiknya
+                        tak bisa melenceng.
           </p>
           <p>
             Satu catatan, tertulis: store dibagi, kunci penandatanganan
-            tidak. Token dari node A tidak terverifikasi lewat JWKS node B.
-            Verifikasi token lintas node membutuhkan shared keystore
-            (KMS/HSM) — M5, tidak diselesaikan oleh perubahan ini.
+                        tidak. Token dari node A tidak terverifikasi lewat JWKS node B.
+                        Verifikasi token lintas node membutuhkan shared keystore
+                        (KMS/HSM) — M5, tidak diselesaikan oleh perubahan ini.
           </p>
 
-          <h2>Pass pemantapan: dua belas temuan</h2>
+          <h2>Dua belas temuan, dikelompokkan</h2>
           <p>
-            Tiap baris: apa yang ditunjukkan serangan, lalu apa yang berubah. Setiap perbaikan membawa regression test; setiap perbaikan di-run ulang terhadap reproduksi aslinya.
+            Tiap baris: apa yang ditunjukkan serangan, lalu apa yang berubah.
+                        Setiap perbaikan membawa regression test; setiap perbaikan
+                        di-run ulang terhadap reproduksi aslinya.
           </p>
           <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th style="width:22%">Area</th><th style="width:39%">Penyebab</th><th>Perbaikan</th></tr>
-            </thead>
-            <tbody>
-              <tr class="group"><td colspan="3">Transport & limit</td></tr>
-              <tr>
-                <td>Budget rate-limit</td>
-                <td>Budget dikonsumsi <em>setelah</em> validasi — flood invalid-JSON dan site key tak dikenal berjalan tanpa throttling (600 request di 225 req/s, nol 429).</td>
-                <td>Budget kini dihitung <em>sebelum</em> validasi.</td>
-              </tr>
-              <tr>
-                <td>Kunci tekanan IPv6</td>
-                <td>Limiter mengunci IPv6 di /128 — satu /64 mengendalikan 2⁶⁴ identitas (5.000 request dari satu blok, nol tersentuh).</td>
-                <td>Counter kini mengagregasi IPv6 ke /64 (ADR-0007).</td>
-              </tr>
-              <tr>
-                <td>Timeout koneksi</td>
-                <td>Tidak ada timeout body/read/idle — klien lambat menahan koneksi tanpa batas.</td>
-                <td><code>ReadTimeout</code>, <code>WriteTimeout</code>, dan <code>IdleTimeout</code> kini diset.</td>
-              </tr>
-              <tr class="group"><td colspan="3">Ekonomi challenge</td></tr>
-              <tr>
-                <td>Floor solve-time</td>
-                <td>Floor memodelkan worker 50rb H/s; worker <code>crypto.subtle</code> terukur ~400rb H/s — klien jujur ditandai implausible.</td>
-                <td>Floor kini kuantil rendah dari waktu solve jujur (<code>2^d / (2M × 32)</code>): false positive ≤ ~6% kasus terburuk, jawaban kelas GPU memicunya ~96% (ADR-0008).</td>
-              </tr>
-              <tr>
-                <td>Verifikasi tertunda</td>
-                <td>Klien mana pun bisa sekadar menunda verifikasi melewati floor berbasis jam dinding — floor tak bisa menangkap kesabaran.</td>
-                <td>Didokumentasikan di threat model sebagai tugas lapisan behavioral (M2), bukan floor.</td>
-              </tr>
-              <tr class="group"><td colspan="3">Token & konfigurasi</td></tr>
-              <tr>
-                <td>TTL token</td>
-                <td>Invarian &ldquo;token tak pernah hidup lebih lama dari challenge-nya&rdquo; tak ditegakkan — token 1 jam diterbitkan dari challenge 5 detik.</td>
-                <td><code>TokenTTL</code> kini di-clamp ke <code>ChallengeTTL</code>.</td>
-              </tr>
-              <tr>
-                <td>Clamp skor</td>
-                <td>Tuning jahat (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) membocorkan skor risiko 500 ke token ter-tanda-tangan.</td>
-                <td>Skor di-clamp ke 0–100 di batas engine; penalty di atas 100 menolak startup.</td>
-              </tr>
-              <tr>
-                <td>Validasi konfigurasi</td>
-                <td><code>MYTHIC_BASE_DIFFICULTY</code> negatif menerbitkan challenge yang dipenuhi nonce apa pun.</td>
-                <td>Konfigurasi divalidasi saat startup; nilai di luar rentang menolak melayani.</td>
-              </tr>
-              <tr>
-                <td>Bentuk kanonis base64</td>
-                <td>Decoder base64 Go diam-diam membuang low bits tak terpakai dari karakter trailing, sehingga string token berbeda ter-decode ke bytes yang sama dan lolos verifikasi — merusak identitas token di level string. Ketahuan oleh mutation suite tamper-resistance di run pertamanya.</td>
-                <td><code>VerifyToken</code> menegakkan base64 kanonis: re-encoding bytes hasil decode harus sama persis dengan input, atau token ditolak.</td>
-              </tr>
-              <tr class="group"><td colspan="3">Penanganan state</td></tr>
-              <tr>
-                <td>Konkurensi keystore</td>
-                <td>Dua proses berbagi satu keystore bertabrakan di file temp yang sama atau split-brain kunci signing tanpa suara.</td>
-                <td>Nama temp unik per proses; save menolak menimpa file yang berubah sejak dimuat.</td>
-              </tr>
-              <tr>
-                <td>Byte sisa JSON</td>
-                <td>Byte sisa setelah nilai JSON diabaikan diam-diam.</td>
-                <td>Byte sisa kini ditolak.</td>
-              </tr>
-              <tr>
-                <td>Saturasi counter</td>
-                <td>Counter sliding-window menyimpan satu entri per hit — termasuk yang ter-rate-limit. Sejuta hit dari satu identitas biayanya ~16,4 MB heap dan 595 dtk CPU.</td>
-                <td>Counter saturasi di <code>IPLimit+1</code>: flood yang sama biayanya +0,00 MB dan 714 ms.</td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
+                    <table>
+                      <thead>
+                        <tr><th style="width:22%">Area</th><th style="width:39%">Penyebab</th><th>Perbaikan</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr class="group"><td colspan="3">Transport & limit</td></tr>
+                        <tr>
+                          <td>Budget rate-limit</td>
+                          <td>Budget dikonsumsi <em>setelah</em> validasi — flood invalid-JSON dan site key tak dikenal berjalan tanpa throttling (600 request di 225 req/s, nol 429).</td>
+                          <td>Budget kini dihitung <em>sebelum</em> validasi.</td>
+                        </tr>
+                        <tr>
+                          <td>Kunci tekanan IPv6</td>
+                          <td>Limiter mengunci IPv6 di /128 — satu /64 mengendalikan 2⁶⁴ identitas (5.000 request dari satu blok, nol tersentuh).</td>
+                          <td>Counter kini mengagregasi IPv6 ke /64 (ADR-0007).</td>
+                        </tr>
+                        <tr>
+                          <td>Timeout koneksi</td>
+                          <td>Tidak ada timeout body/read/idle — klien lambat menahan koneksi tanpa batas.</td>
+                          <td><code>ReadTimeout</code>, <code>WriteTimeout</code>, dan <code>IdleTimeout</code> kini diset.</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">Ekonomi challenge</td></tr>
+                        <tr>
+                          <td>Floor solve-time</td>
+                          <td>Floor memodelkan worker 50rb H/s; worker <code>crypto.subtle</code> terukur ~400rb H/s — klien jujur ditandai implausible.</td>
+                          <td>Floor kini kuantil rendah dari waktu solve jujur (<code>2^d / (2M × 32)</code>): false positive ≤ ~6% kasus terburuk, jawaban kelas GPU memicunya ~96% (ADR-0008).</td>
+                        </tr>
+                        <tr>
+                          <td>Verifikasi tertunda</td>
+                          <td>Klien mana pun bisa sekadar menunda verifikasi melewati floor berbasis jam dinding — floor tak bisa menangkap kesabaran.</td>
+                          <td>Didokumentasikan di threat model sebagai tugas lapisan behavioral (M2), bukan floor.</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">Token & konfigurasi</td></tr>
+                        <tr>
+                          <td>TTL token</td>
+                          <td>Invarian &ldquo;token tak pernah hidup lebih lama dari challenge-nya&rdquo; tak ditegakkan — token 1 jam diterbitkan dari challenge 5 detik.</td>
+                          <td><code>TokenTTL</code> kini di-clamp ke <code>ChallengeTTL</code>.</td>
+                        </tr>
+                        <tr>
+                          <td>Clamp skor</td>
+                          <td>Tuning jahat (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) membocorkan skor risiko 500 ke token ter-tanda-tangan.</td>
+                          <td>Skor di-clamp ke 0–100 di batas engine; penalty di atas 100 menolak startup.</td>
+                        </tr>
+                        <tr>
+                          <td>Validasi konfigurasi</td>
+                          <td><code>MYTHIC_BASE_DIFFICULTY</code> negatif menerbitkan challenge yang dipenuhi nonce apa pun.</td>
+                          <td>Konfigurasi divalidasi saat startup; nilai di luar rentang menolak melayani.</td>
+                        </tr>
+                        <tr>
+                          <td>Bentuk kanonis base64</td>
+                          <td>Decoder base64 Go diam-diam membuang low bits tak terpakai dari karakter trailing, sehingga string token berbeda ter-decode ke bytes yang sama dan lolos verifikasi — merusak identitas token di level string. Ketahuan oleh mutation suite tamper-resistance di run pertamanya.</td>
+                          <td><code>VerifyToken</code> menegakkan base64 kanonis: re-encoding bytes hasil decode harus sama persis dengan input, atau token ditolak.</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">Penanganan state</td></tr>
+                        <tr>
+                          <td>Konkurensi keystore</td>
+                          <td>Dua proses berbagi satu keystore bertabrakan di file temp yang sama atau split-brain kunci signing tanpa suara.</td>
+                          <td>Nama temp unik per proses; save menolak menimpa file yang berubah sejak dimuat.</td>
+                        </tr>
+                        <tr>
+                          <td>Byte sisa JSON</td>
+                          <td>Byte sisa setelah nilai JSON diabaikan diam-diam.</td>
+                          <td>Byte sisa kini ditolak.</td>
+                        </tr>
+                        <tr>
+                          <td>Saturasi counter</td>
+                          <td>Counter sliding-window menyimpan satu entri per hit — termasuk yang ter-rate-limit. Sejuta hit dari satu identitas biayanya ~16,4 MB heap dan 595 dtk CPU.</td>
+                          <td>Counter saturasi di <code>IPLimit+1</code>: flood yang sama biayanya +0,00 MB dan 714 ms.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
           <p>
-                      Fix score-clamp layak ditampilkan karena ia duduk di trust
-                      boundary — nilai yang akhirnya ditandatangani di dalam token:
-                    </p>
+            Fix score-clamp layak ditampilkan karena ia duduk di trust
+                        boundary — nilai yang akhirnya ditandatangani di dalam token:
+          </p>
           <pre><code>// The score is a 0-100 contract (token claim `risk`,
           // dashboards, tuning docs). Hostile tuning must clamp
           // here, not leak 500 into tokens (red-team H3).
@@ -247,17 +248,18 @@
           if score &lt; 0 {
               score = 0
           }</code></pre>
-          <h2>Verifikasi</h2>
+
+          <h2>Verifikasi — dan apa yang masih terbuka</h2>
           <p>
             Setiap temuan punya reproduksi; setiap fix punya regression test
-            (<code>go test ./... -race</code>, plus typecheck dan test SDK),
-            dan setiap fix diverifikasi ulang dengan reproduksi aslinya.
-            Yang masih terbuka terdokumentasi di threat model, bukan di
-            kepala kami: solver sabar yang menunda verifikasi (M2, sinyal
-            behavioral), serangan terdistribusi dengan identitas segar
-            (sebagian sudah ditangani oleh fingerprint jaringan M1 — lihat
-            <a href="m1-complete.html">003</a>), dan keystore per-node (M5,
-            KMS/HSM bersama).
+                        (<code>go test ./... -race</code>, plus typecheck dan test SDK),
+                        dan setiap fix diverifikasi ulang dengan reproduksi aslinya.
+                        Yang masih terbuka terdokumentasi di threat model, bukan di
+                        kepala kami: solver sabar yang menunda verifikasi (M2, sinyal
+                        behavioral), serangan terdistribusi dengan identitas segar
+                        (sebagian sudah ditangani oleh fingerprint jaringan M1 — lihat
+                        <a href="m1-complete.html">003</a>), dan keystore per-node (M5,
+                        KMS/HSM bersama).
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

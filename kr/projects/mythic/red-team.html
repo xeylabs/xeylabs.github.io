@@ -59,179 +59,179 @@
           <span>002 / BUILD</span>
           <span>2026.09.29</span>
           <span>XEY LABS</span>
-          <span>8분</span>
+          <span>10분</span>
         </div>
         <h1>Mythic 하드닝.</h1>
-        <div class="post-body">
+                <div class="post-body">
           <p>
             일주일 동안 우리는
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            구축을 멈추고 대신 깨뜨리는 데 집중했다 —— 라이브 서버에 대한
-            블랙박스, 블랙박스로 부족한 곳은 화이트박스로. 12건의 발견이 나왔다.
-            전부 수정했고, 회귀 테스트로 고정했으며, 완료라고 부르기 전에 원본
-            재현으로 다시 검증했다. 이 글은 같은 패스에서 랜딩한 두 개의 M1
-            로드맵 항목 —— 키 로테이션과 Redis 스토어 —— 도 기록한다.
+                        <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+                        구축을 멈추고 대신 깨뜨리는 데 집중했다 —— 라이브 서버에 대한
+                        블랙박스, 블랙박스로 부족한 곳은 화이트박스로. 12건의 발견이 나왔다.
+                        전부 수정했고, 회귀 테스트로 고정했으며, 완료라고 부르기 전에 원본
+                        재현으로 다시 검증했다. 이 글은 같은 패스에서 랜딩한 두 개의 M1
+                        로드맵 항목 —— 키 로테이션과 Redis 스토어 —— 도 기록한다.
           </p>
 
-          <h2>다운타임 없는 키 로테이션 (ADR-0006)</h2>
+          <h2>다운타임 없는 키 로테이션</h2>
           <p>
             이번 주까지 Mythic은 모든 결정 토큰을 단일 Ed25519 키로 서명했다;
-            로테이션은 재시작을 의미했고 살아있는 모든 토큰을 무효화했다.
-            서버는 이제 정확히 하나의 활성 서명자를 가진 키 링을 유지한다.
-            로테이션은 시간 기반이며 프로세스 내에서 동작한다
-            (<code>MYTHIC_KEY_MAX_AGE</code>, 기본 720h); 은퇴한 키는
-            <code>MYTHIC_KEY_RETENTION</code>(기본 24h) 동안 JWKS에 남는다 —
-            그 키가 서명한 토큰이 유효할 수 있는 시간보다 길다. 키스토어는
-            원자적으로 쓰이는 JSON 파일이다; 기존 32바이트 시드 파일도
-            로드되며 첫 저장 시 마이그레이션된다. 오리진은 여전히 로컬에서
-            토큰을 검증하며, <code>kid</code> 클레임으로 키를 선택한다.
+                        로테이션은 재시작을 의미했고 살아있는 모든 토큰을 무효화했다.
+                        서버는 이제 정확히 하나의 활성 서명자를 가진 키 링을 유지한다
+                        (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0006-key-rotation.md" rel="noopener">ADR-0006</a>).
+                        로테이션은 시간 기반이며 프로세스 내에서 동작한다
+                        (<code>MYTHIC_KEY_MAX_AGE</code>, 기본 720h); 은퇴한 키는
+                        <code>MYTHIC_KEY_RETENTION</code>(기본 24h) 동안 JWKS에 남는다 —
+                        그 키가 서명한 토큰이 유효할 수 있는 시간보다 의도적으로 길어,
+                        전송 중인 토큰이 로테이션 도중에 깨지지 않는다:
           </p>
 
           <div class="fig" role="img" aria-label="키 로테이션 타임라인: 로테이션까지 키 A가 서명하고, 키 B가 인계하며, 키 A는 토큰 수명을 초과하는 보존 윈도우 동안 JWKS에 남는다.">
-            <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
-              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">키 로테이션 타임라인</text>
-              <g font-size="11" fill="#55584F">
-                <text x="20" y="70">서명</text>
-                <text x="20" y="130">JWKS 게시</text>
-                <text x="20" y="190">토큰 수명</text>
-              </g>
-              <g stroke="#D9D7CE" stroke-width="1">
-                <line x1="180" y1="60" x2="940" y2="60"/>
-                <line x1="180" y1="120" x2="940" y2="120"/>
-                <line x1="180" y1="180" x2="940" y2="180"/>
-              </g>
-              <g font-size="11" text-anchor="middle">
-                <rect x="180" y="44" width="380" height="32" fill="#101210"/>
-                <text x="370" y="65" fill="#F4F3EE">키 A 서명</text>
-                <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
-                <text x="750" y="65" fill="#101210">키 B 서명</text>
-                <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
-                <text x="460" y="125" fill="#101210">키 A + 키 B</text>
-                <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
-                <text x="840" y="125" fill="#101210">키 B</text>
-                <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
-                <text x="270" y="185" fill="#101210">토큰 TTL</text>
-              </g>
-              <g font-size="10" fill="#55584F" text-anchor="middle">
-                <text x="560" y="215">로테이션 (MYTHIC_KEY_MAX_AGE)</text>
-                <text x="740" y="215">A 탈퇴 (MYTHIC_KEY_RETENTION)</text>
-              </g>
-              <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
-              <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
-            </svg>
-            <p class="figcap mono">그림 1 — 은퇴한 키는 자신이 서명한 토큰보다 오래 산다. 로테이션은 살아있는 토큰을 무효화하지 않는다.</p>
-          </div>
+                      <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+                        <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">키 로테이션 타임라인</text>
+                        <g font-size="11" fill="#55584F">
+                          <text x="20" y="70">서명</text>
+                          <text x="20" y="130">JWKS 게시</text>
+                          <text x="20" y="190">토큰 수명</text>
+                        </g>
+                        <g stroke="#D9D7CE" stroke-width="1">
+                          <line x1="180" y1="60" x2="940" y2="60"/>
+                          <line x1="180" y1="120" x2="940" y2="120"/>
+                          <line x1="180" y1="180" x2="940" y2="180"/>
+                        </g>
+                        <g font-size="11" text-anchor="middle">
+                          <rect x="180" y="44" width="380" height="32" fill="#101210"/>
+                          <text x="370" y="65" fill="#F4F3EE">키 A 서명</text>
+                          <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                          <text x="750" y="65" fill="#101210">키 B 서명</text>
+                          <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                          <text x="460" y="125" fill="#101210">키 A + 키 B</text>
+                          <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                          <text x="840" y="125" fill="#101210">키 B</text>
+                          <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
+                          <text x="270" y="185" fill="#101210">토큰 TTL</text>
+                        </g>
+                        <g font-size="10" fill="#55584F" text-anchor="middle">
+                          <text x="560" y="215">로테이션 (MYTHIC_KEY_MAX_AGE)</text>
+                          <text x="740" y="215">A 탈퇴 (MYTHIC_KEY_RETENTION)</text>
+                        </g>
+                        <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+                        <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+                      </svg>
+                      <p class="figcap mono">그림 1 — 은퇴한 키는 자신이 서명한 토큰보다 오래 산다. 로테이션은 살아있는 토큰을 무효화하지 않는다.</p>
+                    </div>
 
           <p>
-                      키스토어는 원자적으로 쓰이는 JSON 파일이다; 레거시 32바이트 시드
-                      파일도 로드되며 첫 저장 시 마이그레이션된다. 오리진은 계속 로컬에서
-                      토큰을 검증하고 <code>kid</code> 클레임으로 키를 선택한다 ——
-                      조정 호출이 필요 없다.
-                    </p>
-
-
-          <h2>스토어: 멀티노드용 Redis (ADR-0009)</h2>
-          <p>
-            인메모리 스토어는 Mythic을 단일 노드에 묶었다.
-            <code>MYTHIC_STORE=redis</code>는 Redis 백엔드를 선택한다:
-            single-use 챌린지는 <code>GETDEL</code>(원자적 조회-삭제),
-            압력 카운터는 하나의 Lua 스크립트로 프룬되는 정렬 집합. 두
-            백엔드 모두 슬라이딩 윈도우 카운터를 구현해 고정 윈도우 경계
-            버스트를 닫았다. <code>Store</code> 인터페이스는 이제 오류를
-            반환한다: 도달할 수 없는 Redis는 시작을 거부하고, 런타임 장애는
-            <code>/v1</code>에서 <code>503 store_unavailable</code>으로
-            나타난다 — <code>/healthz</code>는 로드 밸런서를 위해 열려
-            있다. 공유 계약 스위트가 두 백엔드(memory와 miniredis) 모두를
-            실행해 시맨틱이 어긋날 수 없게 한다.
-          </p>
-          <p>
-            한 가지는 서면으로 밝힌다: 스토어는 공유되지만 서명 키는
-            공유되지 않는다. 노드 A의 토큰은 노드 B의 JWKS로 검증되지
-            않는다. 멀티노드 토큰 검증에는 공유 키스토어(KMS/HSM)가
-            필요하다 — M5이며, 이 변경으로 해결되지 않았다.
+            키스토어는 원자적으로 쓰이는 JSON 파일이다; 레거시 32바이트 시드
+                        파일도 로드되며 첫 저장 시 마이그레이션된다. 오리진은 계속 로컬에서
+                        토큰을 검증하고 <code>kid</code> 클레임으로 키를 선택한다 ——
+                        조정 호출이 필요 없다.
           </p>
 
-          <h2>하드닝 패스: 12건의 발견</h2>
+          <h2>단일 노드를 넘어 살아남는 스토어</h2>
           <p>
-            각 행: 공격이 보여준 것, 그리고 바뀐 것. 모든 수정에는 회귀 테스트가 있고, 모든 수정은 원본 재현으로 다시 검증했다.
+            인메모리 스토어는 mythicd를 단일 노드에 묶어두었다
+                        (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0009-redis-store.md" rel="noopener">ADR-0009</a>).
+                        <code>MYTHIC_STORE=redis</code>는 Redis 백엔드를 선택한다:
+                        일회용 챌린지는 <code>GETDEL</code>(원자적 가져오기-삭제),
+                        프레셔 카운터는 하나의 Lua 스크립트로 가지치기하는 sorted set.
+                        두 백엔드 모두 슬라이딩 윈도우 카운터를 구현해 고정 윈도우의
+                        경계 버스트를 막는다. <code>Store</code> 인터페이스는 이제 에러를
+                        반환한다: 닿지 않는 Redis는 시작을 거부하고, 런타임 장애는
+                        <code>/v1</code>에서 <code>503 store_unavailable</code>로 표출되는
+                        동안 <code>/healthz</code>는 로드밸런서를 향해 열려 있다.
+                        공유 컨트랙트 스위트가 두 백엔드(memory와 miniredis)에 대해 돌아서
+                        시맨틱이 어긋날 수 없게 한다.
+          </p>
+          <p>
+            문서로 남길 caveat 하나: 공유되는 것은 스토어지 서명 키가 아니다.
+                        노드 A의 토큰은 노드 B의 JWKS로 검증되지 않는다. 멀티노드 토큰 검증에는
+                        공유 키스토어(KMS/HSM)가 필요하다 —— M5이며, 이번 변경으로
+                        해결되지 않았다.
+          </p>
+
+          <h2>12건의 발견, 그룹별 정리</h2>
+          <p>
+            각 행: 공격이 보여준 것, 그리고 바뀐 것. 모든 수정에는 회귀 테스트가 있고,
+                        모든 수정은 원본 재현으로 다시 검증했다.
           </p>
           <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th style="width:22%">영역</th><th style="width:39%">원인</th><th>수정</th></tr>
-            </thead>
-            <tbody>
-              <tr class="group"><td colspan="3">전송 및 제한</td></tr>
-              <tr>
-                <td>레이트리밋 예산</td>
-                <td>예산이 검증 <em>후에</em> 소진됐다 —— 잘못된 JSON과 알 수 없는 사이트 키 플러드가 스로틀링 없이 통과했다 (600 요청, 225 req/s, 429 제로).</td>
-                <td>예산은 이제 검증 <em>전에</em> 카운트된다.</td>
-              </tr>
-              <tr>
-                <td>IPv6 프레셔 키</td>
-                <td>리미터가 IPv6를 /128로 키잉했다 —— 하나의 /64가 2⁶⁴개의 신원을 장악했다 (단일 블록에서 5,000 요청, 히트 제로).</td>
-                <td>카운터는 IPv6를 /64로 집계한다 (ADR-0007).</td>
-              </tr>
-              <tr>
-                <td>연결 타임아웃</td>
-                <td>body/read/idle 타임아웃이 없었다 —— 느린 클라이언트가 연결을 무기한 점유했다.</td>
-                <td><code>ReadTimeout</code>, <code>WriteTimeout</code>, <code>IdleTimeout</code>을 설정했다.</td>
-              </tr>
-              <tr class="group"><td colspan="3">챌린지 경제성</td></tr>
-              <tr>
-                <td>솔브 시간 플로어</td>
-                <td>플로어는 50k H/s 워커를 모델링했다; 실측 <code>crypto.subtle</code> 워커는 약 400k H/s —— 정직한 클라이언트가 비현실적이라고 판정됐다.</td>
-                <td>플로어는 이제 정직한 솔브 시간의 낮은 분위수다 (<code>2^d / (2M × 32)</code>): 최악의 경우 오탐 ≤ ~6%, GPU급 답안은 약 96% 걸린다 (ADR-0008).</td>
-              </tr>
-              <tr>
-                <td>지연된 검증</td>
-                <td>클라이언트는 검증만 벽시계 플로어 뒤로 미루면 됐다 —— 플로어는 인내를 잡지 못한다.</td>
-                <td>위협 모델에 행동 레이어(M2)의 일로 문서화했다. 플로어의 일이 아니다.</td>
-              </tr>
-              <tr class="group"><td colspan="3">토큰과 설정</td></tr>
-              <tr>
-                <td>토큰 TTL</td>
-                <td>&ldquo;토큰이 챌린지보다 오래 살지 않는다&rdquo;는 문서화된 불변식은 강제되지 않았다 — 5초짜리 챌린지에서 1시간짜리 토큰이 발행됐다.</td>
-                <td><code>TokenTTL</code>은 이제 <code>ChallengeTTL</code>로 클램프된다.</td>
-              </tr>
-              <tr>
-                <td>점수 클램프</td>
-                <td>적대적 튜닝(<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>)이 서명된 토큰에 500의 리스크 점수를 누출했다.</td>
-                <td>점수는 엔진 경계에서 0–100으로 클램프되고 100을 넘는 페널티는 시작을 거부한다.</td>
-              </tr>
-              <tr>
-                <td>설정 검증</td>
-                <td>음수 <code>MYTHIC_BASE_DIFFICULTY</code>는 아무 nonce나 통과하는 챌린지를 발행했다.</td>
-                <td>설정은 시작 시 검증되고 범위를 벗어난 값은 서비스를 거부한다.</td>
-              </tr>
-              <tr>
-                <td>Base64 정규형</td>
-                <td>Go의 base64 디코더는 trailing 문자의 미사용 하위 비트를 조용히 버리기 때문에, 서로 다른 토큰 문자열이 같은 바이트로 디코딩되어 검증을 통과했다 — 문자열 수준의 토큰 동일성이 깨진 것이다. 변조 저항 뮤테이션 스위트의 첫 실행에서 잡았다.</td>
-                <td><code>VerifyToken</code>은 이제 canonical base64를 강제한다: 디코딩된 바이트를 다시 인코딩한 결과가 입력과 정확히 일치하지 않으면 토큰을 거부한다.</td>
-              </tr>
-              <tr class="group"><td colspan="3">상태 처리</td></tr>
-              <tr>
-                <td>키스토어 동시성</td>
-                <td>하나의 키스토어를 공유하는 두 프로세스는 같은 임시 파일에서 충돌하거나 서명 키를 조용히 스플릿브레인했다.</td>
-                <td>임시 파일명은 프로세스별 고유; 저장은 로드 후 변경된 파일에 덮어쓰기를 거부한다.</td>
-              </tr>
-              <tr>
-                <td>JSON trailing 바이트</td>
-                <td>JSON 값 뒤의 trailing 바이트는 조용히 무시됐다.</td>
-                <td>trailing 바이트는 이제 거부된다.</td>
-              </tr>
-              <tr>
-                <td>카운터 포화</td>
-                <td>슬라이딩 윈도우 카운터는 히트마다 (레이트리밋된 것 포함) 하나의 엔트리를 저장했다 — 하나의 신원에서 백만 히트가 약 16.4 MB 힙과 595초 CPU를 썼다.</td>
-                <td>카운터는 <code>IPLimit+1</code>에서 포화된다: 같은 플러드도 +0.00 MB, 714 ms밖에 안 든다.</td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
+                    <table>
+                      <thead>
+                        <tr><th style="width:22%">영역</th><th style="width:39%">원인</th><th>수정</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr class="group"><td colspan="3">전송 및 제한</td></tr>
+                        <tr>
+                          <td>레이트리밋 예산</td>
+                          <td>예산이 검증 <em>후에</em> 소진됐다 —— 잘못된 JSON과 알 수 없는 사이트 키 플러드가 스로틀링 없이 통과했다 (600 요청, 225 req/s, 429 제로).</td>
+                          <td>예산은 이제 검증 <em>전에</em> 카운트된다.</td>
+                        </tr>
+                        <tr>
+                          <td>IPv6 프레셔 키</td>
+                          <td>리미터가 IPv6를 /128로 키잉했다 —— 하나의 /64가 2⁶⁴개의 신원을 장악했다 (단일 블록에서 5,000 요청, 히트 제로).</td>
+                          <td>카운터는 IPv6를 /64로 집계한다 (ADR-0007).</td>
+                        </tr>
+                        <tr>
+                          <td>연결 타임아웃</td>
+                          <td>body/read/idle 타임아웃이 없었다 —— 느린 클라이언트가 연결을 무기한 점유했다.</td>
+                          <td><code>ReadTimeout</code>, <code>WriteTimeout</code>, <code>IdleTimeout</code>을 설정했다.</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">챌린지 경제성</td></tr>
+                        <tr>
+                          <td>솔브 시간 플로어</td>
+                          <td>플로어는 50k H/s 워커를 모델링했다; 실측 <code>crypto.subtle</code> 워커는 약 400k H/s —— 정직한 클라이언트가 비현실적이라고 판정됐다.</td>
+                          <td>플로어는 이제 정직한 솔브 시간의 낮은 분위수다 (<code>2^d / (2M × 32)</code>): 최악의 경우 오탐 ≤ ~6%, GPU급 답안은 약 96% 걸린다 (ADR-0008).</td>
+                        </tr>
+                        <tr>
+                          <td>지연된 검증</td>
+                          <td>클라이언트는 검증만 벽시계 플로어 뒤로 미루면 됐다 —— 플로어는 인내를 잡지 못한다.</td>
+                          <td>위협 모델에 행동 레이어(M2)의 일로 문서화했다. 플로어의 일이 아니다.</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">토큰과 설정</td></tr>
+                        <tr>
+                          <td>토큰 TTL</td>
+                          <td>&ldquo;토큰이 챌린지보다 오래 살지 않는다&rdquo;는 문서화된 불변식은 강제되지 않았다 — 5초짜리 챌린지에서 1시간짜리 토큰이 발행됐다.</td>
+                          <td><code>TokenTTL</code>은 이제 <code>ChallengeTTL</code>로 클램프된다.</td>
+                        </tr>
+                        <tr>
+                          <td>점수 클램프</td>
+                          <td>적대적 튜닝(<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>)이 서명된 토큰에 500의 리스크 점수를 누출했다.</td>
+                          <td>점수는 엔진 경계에서 0–100으로 클램프되고 100을 넘는 페널티는 시작을 거부한다.</td>
+                        </tr>
+                        <tr>
+                          <td>설정 검증</td>
+                          <td>음수 <code>MYTHIC_BASE_DIFFICULTY</code>는 아무 nonce나 통과하는 챌린지를 발행했다.</td>
+                          <td>설정은 시작 시 검증되고 범위를 벗어난 값은 서비스를 거부한다.</td>
+                        </tr>
+                        <tr>
+                          <td>Base64 정규형</td>
+                          <td>Go의 base64 디코더는 trailing 문자의 미사용 하위 비트를 조용히 버리기 때문에, 서로 다른 토큰 문자열이 같은 바이트로 디코딩되어 검증을 통과했다 — 문자열 수준의 토큰 동일성이 깨진 것이다. 변조 저항 뮤테이션 스위트의 첫 실행에서 잡았다.</td>
+                          <td><code>VerifyToken</code>은 이제 canonical base64를 강제한다: 디코딩된 바이트를 다시 인코딩한 결과가 입력과 정확히 일치하지 않으면 토큰을 거부한다.</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">상태 처리</td></tr>
+                        <tr>
+                          <td>키스토어 동시성</td>
+                          <td>하나의 키스토어를 공유하는 두 프로세스는 같은 임시 파일에서 충돌하거나 서명 키를 조용히 스플릿브레인했다.</td>
+                          <td>임시 파일명은 프로세스별 고유; 저장은 로드 후 변경된 파일에 덮어쓰기를 거부한다.</td>
+                        </tr>
+                        <tr>
+                          <td>JSON trailing 바이트</td>
+                          <td>JSON 값 뒤의 trailing 바이트는 조용히 무시됐다.</td>
+                          <td>trailing 바이트는 이제 거부된다.</td>
+                        </tr>
+                        <tr>
+                          <td>카운터 포화</td>
+                          <td>슬라이딩 윈도우 카운터는 히트마다 (레이트리밋된 것 포함) 하나의 엔트리를 저장했다 — 하나의 신원에서 백만 히트가 약 16.4 MB 힙과 595초 CPU를 썼다.</td>
+                          <td>카운터는 <code>IPLimit+1</code>에서 포화된다: 같은 플러드도 +0.00 MB, 714 ms밖에 안 든다.</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
           <p>
-                      점수 클램프 수정은 보여줄 가치가 있다. 신뢰 경계에 있기 때문이다
-                      —— 토큰 안에 서명되어 들어가는 값:
-                    </p>
+            점수 클램프 수정은 보여줄 가치가 있다. 신뢰 경계에 있기 때문이다
+                        —— 토큰 안에 서명되어 들어가는 값:
+          </p>
           <pre><code>// The score is a 0-100 contract (token claim `risk`,
           // dashboards, tuning docs). Hostile tuning must clamp
           // here, not leak 500 into tokens (red-team H3).
@@ -241,16 +241,17 @@
           if score &lt; 0 {
               score = 0
           }</code></pre>
-          <h2>검증</h2>
+
+          <h2>검증 —— 그리고 아직 열린 문제</h2>
           <p>
             모든 발견에는 재현이 있고, 모든 수정에는 회귀 테스트가 있다
-            (<code>go test ./... -race</code>, plus SDK 타입체크와 테스트).
-            그리고 모든 수정은 원본 재현으로 다시 검증했다. 아직 열린 것은
-            우리 머릿속이 아니라 위협 모델에 문서화되어 있다: 검증을 지연시키는
-            인내심 많은 솔버 (M2, 행동 신호), 새 신원을 쓰는 분산 공격
-            (이후 M1 네트워크 지문으로 부분 해결 ——
-            <a href="m1-complete.html">003</a> 참조), 노드별 키스토어
-            (M5, 공유 KMS/HSM).
+                        (<code>go test ./... -race</code>, plus SDK 타입체크와 테스트).
+                        그리고 모든 수정은 원본 재현으로 다시 검증했다. 아직 열린 것은
+                        우리 머릿속이 아니라 위협 모델에 문서화되어 있다: 검증을 지연시키는
+                        인내심 많은 솔버 (M2, 행동 신호), 새 신원을 쓰는 분산 공격
+                        (이후 M1 네트워크 지문으로 부분 해결 ——
+                        <a href="m1-complete.html">003</a> 참조), 노드별 키스토어
+                        (M5, 공유 KMS/HSM).
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

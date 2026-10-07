@@ -59,181 +59,182 @@
           <span>002 / BUILD</span>
           <span>2026.09.29</span>
           <span>XEY LABS</span>
-          <span>8分</span>
+          <span>10分</span>
         </div>
         <h1>Mythicのハードニング。</h1>
-        <div class="post-body">
+                <div class="post-body">
           <p>
             1週間、私たちは
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            の構築を止めて、壊すことに専念した —— 稼働中のサーバーに対する
-            ブラックボックス、ブラックボックスで足りないところはホワイトボックスで。
-            12件の発見が生まれた。すべて修正し、回帰テストで固定し、完了と呼ぶ前に
-            元の再現手順で再検証した。本エントリでは、同じパスで着地したM1
-            ロードマップの2項目 —— 鍵ローテーションとRedisストア —— も記録する。
+                        <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+                        の構築を止めて、壊すことに専念した —— 稼働中のサーバーに対する
+                        ブラックボックス、ブラックボックスで足りないところはホワイトボックスで。
+                        12件の発見が生まれた。すべて修正し、回帰テストで固定し、完了と呼ぶ前に
+                        元の再現手順で再検証した。本エントリでは、同じパスで着地したM1
+                        ロードマップの2項目 —— 鍵ローテーションとRedisストア —— も記録する。
           </p>
 
-          <h2>ダウンタイムなしの鍵ローテーション (ADR-0006)</h2>
+          <h2>ダウンタイムなしの鍵ローテーション</h2>
           <p>
             今週までMythicはすべての決定トークンを単一のEd25519鍵で署名して
-            いた。ローテーションは再起動を意味し、生きている全トークンを
-            無効化した。サーバーは現在、アクティブな署名者を正確に1つ持つ
-            キーリングを保持する。ローテーションは時間ベースで
-            プロセス内で動く（<code>MYTHIC_KEY_MAX_AGE</code>、既定720h）；
-            引退した鍵は<code>MYTHIC_KEY_RETENTION</code>（既定24h）の間
-            JWKSに残る —— その鍵が署名したトークンの寿命より長い。
-            キーストアはアトミックに書かれるJSONファイル；旧来の32バイト
-            シードファイルも読み込み、最初の保存で移行する。オリジンは
-            これまで通りローカルでトークンを検証し、<code>kid</code>クレームで
-            鍵を選ぶ。
+                        いた。ローテーションは再起動を意味し、生きている全トークンを
+                        無効化した。サーバーは現在、アクティブな署名者を正確に1つ持つ
+                        キーリングを保持する
+                        (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0006-key-rotation.md" rel="noopener">ADR-0006</a>)。
+                        ローテーションは時間ベースでプロセス内で動く
+                        (<code>MYTHIC_KEY_MAX_AGE</code>、既定720h)；引退した鍵は
+                        <code>MYTHIC_KEY_RETENTION</code>（既定24h）の間JWKSに残る ——
+                        その鍵が署名したトークンの寿命より意図的に長く、飛行中のトークンが
+                        ローテーション途中で壊れることは決してない：
           </p>
 
           <div class="fig" role="img" aria-label="鍵ローテーションのタイムライン：ローテーションまで鍵Aが署名し、鍵Bが引き継ぎ、鍵Aはトークンの有効期間を上回る保持ウィンドウの間JWKSに残る。">
-            <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
-              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">鍵ローテーションのタイムライン</text>
-              <g font-size="11" fill="#55584F">
-                <text x="20" y="70">署名</text>
-                <text x="20" y="130">JWKSで広告</text>
-                <text x="20" y="190">トークンの有効期間</text>
-              </g>
-              <g stroke="#D9D7CE" stroke-width="1">
-                <line x1="180" y1="60" x2="940" y2="60"/>
-                <line x1="180" y1="120" x2="940" y2="120"/>
-                <line x1="180" y1="180" x2="940" y2="180"/>
-              </g>
-              <g font-size="11" text-anchor="middle">
-                <rect x="180" y="44" width="380" height="32" fill="#101210"/>
-                <text x="370" y="65" fill="#F4F3EE">鍵Aが署名</text>
-                <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
-                <text x="750" y="65" fill="#101210">鍵Bが署名</text>
-                <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
-                <text x="460" y="125" fill="#101210">鍵A + 鍵B</text>
-                <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
-                <text x="840" y="125" fill="#101210">鍵B</text>
-                <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
-                <text x="270" y="185" fill="#101210">トークンTTL</text>
-              </g>
-              <g font-size="10" fill="#55584F" text-anchor="middle">
-                <text x="560" y="215">ローテーション (MYTHIC_KEY_MAX_AGE)</text>
-                <text x="740" y="215">Aが離脱 (MYTHIC_KEY_RETENTION)</text>
-              </g>
-              <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
-              <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
-            </svg>
-            <p class="figcap mono">図1 — 引退した鍵は署名したトークンより長く生きる。ローテーションで有効なトークンが無効になることはない。</p>
-          </div>
+                      <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+                        <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">鍵ローテーションのタイムライン</text>
+                        <g font-size="11" fill="#55584F">
+                          <text x="20" y="70">署名</text>
+                          <text x="20" y="130">JWKSで広告</text>
+                          <text x="20" y="190">トークンの有効期間</text>
+                        </g>
+                        <g stroke="#D9D7CE" stroke-width="1">
+                          <line x1="180" y1="60" x2="940" y2="60"/>
+                          <line x1="180" y1="120" x2="940" y2="120"/>
+                          <line x1="180" y1="180" x2="940" y2="180"/>
+                        </g>
+                        <g font-size="11" text-anchor="middle">
+                          <rect x="180" y="44" width="380" height="32" fill="#101210"/>
+                          <text x="370" y="65" fill="#F4F3EE">鍵Aが署名</text>
+                          <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                          <text x="750" y="65" fill="#101210">鍵Bが署名</text>
+                          <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                          <text x="460" y="125" fill="#101210">鍵A + 鍵B</text>
+                          <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                          <text x="840" y="125" fill="#101210">鍵B</text>
+                          <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
+                          <text x="270" y="185" fill="#101210">トークンTTL</text>
+                        </g>
+                        <g font-size="10" fill="#55584F" text-anchor="middle">
+                          <text x="560" y="215">ローテーション (MYTHIC_KEY_MAX_AGE)</text>
+                          <text x="740" y="215">Aが離脱 (MYTHIC_KEY_RETENTION)</text>
+                        </g>
+                        <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+                        <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+                      </svg>
+                      <p class="figcap mono">図1 — 引退した鍵は署名したトークンより長く生きる。ローテーションで有効なトークンが無効になることはない。</p>
+                    </div>
 
           <p>
-                      キーストアはアトミックに書き込まれるJSONファイルである；旧来の
-                      32バイトシードファイルも読み込み可能で、最初の保存時に移行する。
-                      オリジンは引き続きトークンをローカルで検証し、<code>kid</code>
-                      クレームで鍵を選択する —— 調整のための呼び出しは不要。
-                    </p>
-
-
-          <h2>ストア：マルチノード用Redis (ADR-0009)</h2>
-          <p>
-            インメモリストアはMythicを単一ノードに縛っていた。
-            <code>MYTHIC_STORE=redis</code>でRedisバックエンドを選択する：
-            single-useチャレンジは<code>GETDEL</code>（原子的な
-            取得・削除）、圧力カウンターは1つのLuaスクリプトでプルーンされる
-            ソート済みセット。両バックエンドともスライディングウィンドウ
-            カウンターを実装し、固定ウィンドウの境界バーストを閉じた。
-            <code>Store</code>インターフェイスはエラーを返す：到達不能な
-            Redisは起動を拒否し、実行時の障害は<code>/v1</code>で
-            <code>503 store_unavailable</code>として現れる。一方
-            <code>/healthz</code>はロードバランサーのために開いたまま。
-            共有契約スイートが両バックエンド（memoryとminiredis）に対して
-            実行され、セマンティクスの逸脱を防ぐ。
-          </p>
-          <p>
-            ひとつ、書いておく：ストアは共有されるが、署名鍵は共有されない。
-            ノードAのトークンはノードBのJWKSでは検証できない。マルチノードの
-            トークン検証には共有キーストア（KMS/HSM）が必要 —— M5であり、
-            この変更では解決していない。
+            キーストアはアトミックに書き込まれるJSONファイルである；旧来の
+                        32バイトシードファイルも読み込み可能で、最初の保存時に移行する。
+                        オリジンは引き続きトークンをローカルで検証し、
+                        <code>kid</code> クレームで鍵を選択する ——
+                        調整のための呼び出しは不要。
           </p>
 
-          <h2>ハードニングパス：12件の発見</h2>
+          <h2>単一ノードを超えて生き残るストア</h2>
           <p>
-            各行：攻撃が示したこと、次に変えたこと。すべての修正に回帰テストがあり、すべての修正は元の再現手順で再検証した。
+            インメモリストアはmythicdを単一ノードに縛り付けていた
+                        (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0009-redis-store.md" rel="noopener">ADR-0009</a>)。
+                        <code>MYTHIC_STORE=redis</code>でRedisバックエンドを選択する：
+                        使い捨てチャレンジは<code>GETDEL</code>（アトミックな取得と削除）、
+                        プレッシャーカウンタは1つのLuaスクリプトで刈り込むソート済みセット。
+                        両バックエンドはスライディングウィンドウカウンタを実装し、
+                        固定ウィンドウの境界バーストを塞ぐ。
+                        <code>Store</code>インターフェースはエラーを返すようになった：
+                        到達不能なRedisは起動を拒否し、実行時の障害は<code>/v1</code>で
+                        <code>503 store_unavailable</code>として表出する一方、
+                        <code>/healthz</code>はロードバランサ向けに開いたままになる。
+                        共有の契約スイートが両バックエンド（memoryとminiredis）に対して走り、
+                        セマンティクスが乖離できないようにする。
+          </p>
+          <p>
+            明記しておくべき注意点が1つ：共有されるのはストアであって、
+                        署名鍵ではない。ノードAのトークンはノードBのJWKSでは検証できない。
+                        マルチノードのトークン検証には共有キーストア（KMS/HSM）が必要 ——
+                        M5であり、この変更では解決していない。
+          </p>
+
+          <h2>12件の発見、グループ別</h2>
+          <p>
+            各行：攻撃が示したこと、次に変えたこと。すべての修正に回帰テストがあり、
+                        すべての修正は元の再現手順で再検証した。
           </p>
           <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th style="width:22%">領域</th><th style="width:39%">原因</th><th>修正</th></tr>
-            </thead>
-            <tbody>
-              <tr class="group"><td colspan="3">トランスポートと制限</td></tr>
-              <tr>
-                <td>レート制限バジェット</td>
-                <td>バジェットは検証の<em>後</em>で消費された —— 不正JSONや未知のサイトキーの洪水がスロットルなしで通った（600リクエスト、225 req/s、429ゼロ）。</td>
-                <td>バジェットは検証の<em>前</em>にカウントされるようになった。</td>
-              </tr>
-              <tr>
-                <td>IPv6プレッシャーキー</td>
-                <td>リミッターはIPv6を/128でキー化 —— 1つの/64が2⁶⁴のIDを支配した（単一ブロックから5,000リクエスト、ヒットゼロ）。</td>
-                <td>カウンタはIPv6を/64に集約する（ADR-0007）。</td>
-              </tr>
-              <tr>
-                <td>接続タイムアウト</td>
-                <td>body/read/idle タイムアウトがなかった —— 遅いクライアントが接続を無期限に保持した。</td>
-                <td><code>ReadTimeout</code>、<code>WriteTimeout</code>、<code>IdleTimeout</code> を設定した。</td>
-              </tr>
-              <tr class="group"><td colspan="3">チャレンジの経済性</td></tr>
-              <tr>
-                <td>ソルブ時間フロア</td>
-                <td>フロアは50k H/sのワーカーをモデル化；実測の <code>crypto.subtle</code> ワーカーは約400k H/s —— 誠実なクライアントが非現実的と判定された。</td>
-                <td>フロアは誠実なソルブ時間の低い分位数になった（<code>2^d / (2M × 32)</code>）：最悪でも誤検出 ≤ ~6%、GPU級の回答は約96%で引っかかる（ADR-0008）。</td>
-              </tr>
-              <tr>
-                <td>検証の遅延</td>
-                <td>クライアントは検証を壁時計フロアの後に遅らせるだけでよい —— フロアは忍耐を捕まえられない。</td>
-                <td>脅威モデルに行動層（M2）の仕事として文書化した。フロアの仕事ではない。</td>
-              </tr>
-              <tr class="group"><td colspan="3">トークンと設定</td></tr>
-              <tr>
-                <td>トークンTTL</td>
-                <td>&ldquo;トークンはチャレンジより長生きしない&rdquo;という文書化された不変条件は強制されていなかった —— 5秒のチャレンジから1時間のトークンが発行された。</td>
-                <td><code>TokenTTL</code>は<code>ChallengeTTL</code>にクランプされるようになった。</td>
-              </tr>
-              <tr>
-                <td>スコアクランプ</td>
-                <td>敵意あるチューニング（<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>）が署名済みトークンにリスクスコア500を漏らした。</td>
-                <td>スコアはエンジン境界で0–100にクランプ；100超のペナルティは起動を拒否する。</td>
-              </tr>
-              <tr>
-                <td>設定の検証</td>
-                <td>負の <code>MYTHIC_BASE_DIFFICULTY</code> は任意のnonceで通るチャレンジを発行した。</td>
-                <td>設定は起動時に検証され、範囲外の値は提供を拒否する。</td>
-              </tr>
-              <tr>
-                <td>Base64正規形</td>
-                <td>Go の base64 デコーダは末尾文字の未使用下位ビットを黙って捨てるため、異なるトークン文字列が同じバイト列にデコードされて検証を通過した —— 文字列レベルのトークン同一性が壊れていた。改ざん耐性ミューテーションスイートの初回実行で検出。</td>
-                <td><code>VerifyToken</code> は正規 base64 を強制する：デコードしたバイト列の再エンコードが入力と完全一致しなければトークンを拒否する。</td>
-              </tr>
-              <tr class="group"><td colspan="3">状態管理</td></tr>
-              <tr>
-                <td>キーストアの並行性</td>
-                <td>1つのキーストアを共有する2プロセスは、同じテンポラリファイルで衝突するか、署名鍵を黙ってスプリットブレインした。</td>
-                <td>テンポラリ名はプロセスごとに一意；保存はロード後に変更されたファイルへの上書きを拒否する。</td>
-              </tr>
-              <tr>
-                <td>JSON末尾バイト</td>
-                <td>JSON値の後の末尾バイトは黙って無視された。</td>
-                <td>末尾バイトは拒否されるようになった。</td>
-              </tr>
-              <tr>
-                <td>カウンタの飽和</td>
-                <td>スライディングウィンドウカウンタはヒットごと（レート制限済みも含む）に1エントリ保存した —— 1つのIDからの百万ヒットで約16.4 MBのヒープと595秒のCPUを消費した。</td>
-                <td>カウンタは <code>IPLimit+1</code> で飽和する：同じ洪水でも +0.00 MB、714 ms しかかからない。</td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
+                    <table>
+                      <thead>
+                        <tr><th style="width:22%">領域</th><th style="width:39%">原因</th><th>修正</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr class="group"><td colspan="3">トランスポートと制限</td></tr>
+                        <tr>
+                          <td>レート制限バジェット</td>
+                          <td>バジェットは検証の<em>後</em>で消費された —— 不正JSONや未知のサイトキーの洪水がスロットルなしで通った（600リクエスト、225 req/s、429ゼロ）。</td>
+                          <td>バジェットは検証の<em>前</em>にカウントされるようになった。</td>
+                        </tr>
+                        <tr>
+                          <td>IPv6プレッシャーキー</td>
+                          <td>リミッターはIPv6を/128でキー化 —— 1つの/64が2⁶⁴のIDを支配した（単一ブロックから5,000リクエスト、ヒットゼロ）。</td>
+                          <td>カウンタはIPv6を/64に集約する（ADR-0007）。</td>
+                        </tr>
+                        <tr>
+                          <td>接続タイムアウト</td>
+                          <td>body/read/idle タイムアウトがなかった —— 遅いクライアントが接続を無期限に保持した。</td>
+                          <td><code>ReadTimeout</code>、<code>WriteTimeout</code>、<code>IdleTimeout</code> を設定した。</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">チャレンジの経済性</td></tr>
+                        <tr>
+                          <td>ソルブ時間フロア</td>
+                          <td>フロアは50k H/sのワーカーをモデル化；実測の <code>crypto.subtle</code> ワーカーは約400k H/s —— 誠実なクライアントが非現実的と判定された。</td>
+                          <td>フロアは誠実なソルブ時間の低い分位数になった（<code>2^d / (2M × 32)</code>）：最悪でも誤検出 ≤ ~6%、GPU級の回答は約96%で引っかかる（ADR-0008）。</td>
+                        </tr>
+                        <tr>
+                          <td>検証の遅延</td>
+                          <td>クライアントは検証を壁時計フロアの後に遅らせるだけでよい —— フロアは忍耐を捕まえられない。</td>
+                          <td>脅威モデルに行動層（M2）の仕事として文書化した。フロアの仕事ではない。</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">トークンと設定</td></tr>
+                        <tr>
+                          <td>トークンTTL</td>
+                          <td>&ldquo;トークンはチャレンジより長生きしない&rdquo;という文書化された不変条件は強制されていなかった —— 5秒のチャレンジから1時間のトークンが発行された。</td>
+                          <td><code>TokenTTL</code>は<code>ChallengeTTL</code>にクランプされるようになった。</td>
+                        </tr>
+                        <tr>
+                          <td>スコアクランプ</td>
+                          <td>敵意あるチューニング（<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>）が署名済みトークンにリスクスコア500を漏らした。</td>
+                          <td>スコアはエンジン境界で0–100にクランプ；100超のペナルティは起動を拒否する。</td>
+                        </tr>
+                        <tr>
+                          <td>設定の検証</td>
+                          <td>負の <code>MYTHIC_BASE_DIFFICULTY</code> は任意のnonceで通るチャレンジを発行した。</td>
+                          <td>設定は起動時に検証され、範囲外の値は提供を拒否する。</td>
+                        </tr>
+                        <tr>
+                          <td>Base64正規形</td>
+                          <td>Go の base64 デコーダは末尾文字の未使用下位ビットを黙って捨てるため、異なるトークン文字列が同じバイト列にデコードされて検証を通過した —— 文字列レベルのトークン同一性が壊れていた。改ざん耐性ミューテーションスイートの初回実行で検出。</td>
+                          <td><code>VerifyToken</code> は正規 base64 を強制する：デコードしたバイト列の再エンコードが入力と完全一致しなければトークンを拒否する。</td>
+                        </tr>
+                        <tr class="group"><td colspan="3">状態管理</td></tr>
+                        <tr>
+                          <td>キーストアの並行性</td>
+                          <td>1つのキーストアを共有する2プロセスは、同じテンポラリファイルで衝突するか、署名鍵を黙ってスプリットブレインした。</td>
+                          <td>テンポラリ名はプロセスごとに一意；保存はロード後に変更されたファイルへの上書きを拒否する。</td>
+                        </tr>
+                        <tr>
+                          <td>JSON末尾バイト</td>
+                          <td>JSON値の後の末尾バイトは黙って無視された。</td>
+                          <td>末尾バイトは拒否されるようになった。</td>
+                        </tr>
+                        <tr>
+                          <td>カウンタの飽和</td>
+                          <td>スライディングウィンドウカウンタはヒットごと（レート制限済みも含む）に1エントリ保存した —— 1つのIDからの百万ヒットで約16.4 MBのヒープと595秒のCPUを消費した。</td>
+                          <td>カウンタは <code>IPLimit+1</code> で飽和する：同じ洪水でも +0.00 MB、714 ms しかかからない。</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
           <p>
-                      スコアクランプの修正は見せる価値がある。信頼境界に位置するからだ
-                      —— トークンの中に署名されて入る値：
-                    </p>
+            スコアクランプの修正は見せる価値がある。信頼境界に位置するからだ
+                        —— トークンの中に署名されて入る値：
+          </p>
           <pre><code>// The score is a 0-100 contract (token claim `risk`,
           // dashboards, tuning docs). Hostile tuning must clamp
           // here, not leak 500 into tokens (red-team H3).
@@ -243,16 +244,17 @@
           if score &lt; 0 {
               score = 0
           }</code></pre>
-          <h2>検証</h2>
+
+          <h2>検証 —— そして残された課題</h2>
           <p>
             すべての発見に再現手順があり、すべての修正に回帰テストがある
-            （<code>go test ./... -race</code>、加えてSDKのタイプチェックとテスト）。
-            そしてすべての修正は元の再現手順で再検証した。未解決のまま残るものは、
-            私たちの頭の中ではなく脅威モデルに文書化されている：検証を遅らせる
-            辛抱強いソルバー（M2、行動シグナル）、新しいIDを使った分散攻撃
-            （その後M1のネットワークフィンガープリントで部分的に対処 ——
-            <a href="m1-complete.html">003</a>参照）、ノードごとのキーストア
-            （M5、共有KMS/HSM）。
+                        （<code>go test ./... -race</code>、加えてSDKのタイプチェックとテスト）。
+                        そしてすべての修正は元の再現手順で再検証した。未解決のまま残るものは、
+                        私たちの頭の中ではなく脅威モデルに文書化されている：検証を遅らせる
+                        辛抱強いソルバー（M2、行動シグナル）、新しいIDを使った分散攻撃
+                        （その後M1のネットワークフィンガープリントで部分的に対処 ——
+                        <a href="m1-complete.html">003</a>参照）、ノードごとのキーストア
+                        （M5、共有KMS/HSM）。
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>
