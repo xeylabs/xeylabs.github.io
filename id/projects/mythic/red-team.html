@@ -150,6 +150,13 @@
             <code>MYTHIC_BASE_DIFFICULTY</code> negatif menerbitkan
             challenge yang dipenuhi nonce apa pun; konfigurasi divalidasi
             saat startup dan nilai di luar rentang menolak melayani.
+            Temuan dari mutation suite: decoder base64 Go diam-diam
+            membuang low bits yang tak terpakai dari karakter trailing,
+            sehingga string token yang berbeda bisa ter-decode ke bytes
+            yang sama dan lolos verifikasi — merusak identitas token di
+            level string. <code>VerifyToken</code> kini menegakkan base64
+            kanonis: re-encoding bytes hasil decode harus sama persis
+            dengan input, atau token ditolak.
           </p>
 
           <h3>Penanganan state</h3>

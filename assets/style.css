@@ -372,6 +372,12 @@ footer { border-top: 1px solid var(--ink); }
 .post-body ul { margin: 1.25em 0 1.25em 1.25em; }
 .post-body li { margin-block: 0.4em; }
 .post-body strong { font-weight: 700; }
+.post-body .table-wrap { overflow-x: auto; margin-block: 1.5em; border: 1px solid var(--line); }
+.post-body table { width: 100%; min-width: 36rem; border-collapse: collapse; font-size: 0.9rem; line-height: 1.6; }
+.post-body th, .post-body td { padding: 0.7em 0.9em; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.post-body thead th { font-family: var(--font-m); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mut); border-bottom: 1px solid var(--ink); }
+.post-body tbody tr:last-child td { border-bottom: 0; }
+.post-body tr.group td { font-family: var(--font-m); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; background: var(--paper); color: var(--ink); }
 .post-sign {
   margin-top: 3rem; padding-top: 1rem;
   border-top: 1px solid var(--line); color: var(--mut);

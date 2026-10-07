@@ -158,6 +158,7 @@
             carries a regression test; every fix was re-run against its
             original reproduction.
           </p>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th style="width:22%">Area</th><th style="width:39%">Cause</th><th>Fix</th></tr>
@@ -206,6 +207,11 @@
                 <td>A negative <code>MYTHIC_BASE_DIFFICULTY</code> issued challenges any nonce satisfied.</td>
                 <td>Configuration is validated at startup; out-of-range values refuse to serve.</td>
               </tr>
+              <tr>
+                <td>Base64 canonical form</td>
+                <td>Go's base64 decoder silently discards the unused low bits of a trailing character, so distinct token strings decoded to the same bytes and verified — breaking string-level token identity. Caught by the tamper-resistance mutation suite on its first run.</td>
+                <td><code>VerifyToken</code> enforces canonical base64: re-encoding the decoded bytes must reproduce the input exactly, otherwise the token is rejected.</td>
+              </tr>
               <tr class="group"><td colspan="3">State handling</td></tr>
               <tr>
                 <td>Keystore concurrency</td>
@@ -224,6 +230,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
           <p>
             The score-clamp fix is worth showing because it sits at a trust
             boundary — the value that ends up signed inside tokens:
