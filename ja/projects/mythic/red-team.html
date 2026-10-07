@@ -19,6 +19,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .post-body tr.group td { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; background: rgba(16,18,16,.05); border-bottom: 1px solid var(--ink); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -52,12 +64,13 @@
         <h1>Mythicのハードニング。</h1>
         <div class="post-body">
           <p>
-            このエントリーは
+            1週間、私たちは
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            の1週間の作業をひとつにまとめたものだ：M1ロードマップの2項目と、
-            自サーバーへのアドバーサリアルテストが駆動するハードニングパス。
-            テストは12件の発見を生んだ。すべて修正され、それぞれが回帰テストで
-            固定され、修正ごとに元の再現手順で再検証してから完了と判断した。
+            の構築を止めて、壊すことに専念した —— 稼働中のサーバーに対する
+            ブラックボックス、ブラックボックスで足りないところはホワイトボックスで。
+            12件の発見が生まれた。すべて修正し、回帰テストで固定し、完了と呼ぶ前に
+            元の再現手順で再検証した。本エントリでは、同じパスで着地したM1
+            ロードマップの2項目 —— 鍵ローテーションとRedisストア —— も記録する。
           </p>
 
           <h2>ダウンタイムなしの鍵ローテーション (ADR-0006)</h2>
@@ -74,6 +87,49 @@
             これまで通りローカルでトークンを検証し、<code>kid</code>クレームで
             鍵を選ぶ。
           </p>
+
+          <div class="fig" role="img" aria-label="鍵ローテーションのタイムライン：ローテーションまで鍵Aが署名し、鍵Bが引き継ぎ、鍵Aはトークンの有効期間を上回る保持ウィンドウの間JWKSに残る。">
+            <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">鍵ローテーションのタイムライン</text>
+              <g font-size="11" fill="#55584F">
+                <text x="20" y="70">署名</text>
+                <text x="20" y="130">JWKSで広告</text>
+                <text x="20" y="190">トークンの有効期間</text>
+              </g>
+              <g stroke="#D9D7CE" stroke-width="1">
+                <line x1="180" y1="60" x2="940" y2="60"/>
+                <line x1="180" y1="120" x2="940" y2="120"/>
+                <line x1="180" y1="180" x2="940" y2="180"/>
+              </g>
+              <g font-size="11" text-anchor="middle">
+                <rect x="180" y="44" width="380" height="32" fill="#101210"/>
+                <text x="370" y="65" fill="#F4F3EE">鍵Aが署名</text>
+                <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="750" y="65" fill="#101210">鍵Bが署名</text>
+                <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="460" y="125" fill="#101210">鍵A + 鍵B</text>
+                <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="840" y="125" fill="#101210">鍵B</text>
+                <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
+                <text x="270" y="185" fill="#101210">トークンTTL</text>
+              </g>
+              <g font-size="10" fill="#55584F" text-anchor="middle">
+                <text x="560" y="215">ローテーション (MYTHIC_KEY_MAX_AGE)</text>
+                <text x="740" y="215">Aが離脱 (MYTHIC_KEY_RETENTION)</text>
+              </g>
+              <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+            </svg>
+            <p class="figcap mono">図1 — 引退した鍵は署名したトークンより長く生きる。ローテーションで有効なトークンが無効になることはない。</p>
+          </div>
+
+          <p>
+                      キーストアはアトミックに書き込まれるJSONファイルである；旧来の
+                      32バイトシードファイルも読み込み可能で、最初の保存時に移行する。
+                      オリジンは引き続きトークンをローカルで検証し、<code>kid</code>
+                      クレームで鍵を選択する —— 調整のための呼び出しは不要。
+                    </p>
+
 
           <h2>ストア：マルチノード用Redis (ADR-0009)</h2>
           <p>
@@ -174,15 +230,29 @@
             </tbody>
           </table>
           </div>
+          <p>
+                      スコアクランプの修正は見せる価値がある。信頼境界に位置するからだ
+                      —— トークンの中に署名されて入る値：
+                    </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+          // dashboards, tuning docs). Hostile tuning must clamp
+          // here, not leak 500 into tokens (red-team H3).
+          if score &gt; 100 {
+              score = 100
+          }
+          if score &lt; 0 {
+              score = 0
+          }</code></pre>
           <h2>検証</h2>
           <p>
-            すべての発見には再現手順があり、すべての修正には回帰テストがある
-            （<code>go test ./... -race</code>、加えてSDKのタイプチェックと
-            テスト）、そしてすべての修正は元の再現手順で再検証された。
-            残る未解決項目はスレットモデルに文書化されている：検証を遅らせる
-            忍耐強いソルバー（M2、振る舞いシグナル）、新しい識別子による分散
-            攻撃（M1、ネットワークフィンガープリント）、ノード単位の
-            キーストア（M5、共有KMS/HSM）。
+            すべての発見に再現手順があり、すべての修正に回帰テストがある
+            （<code>go test ./... -race</code>、加えてSDKのタイプチェックとテスト）。
+            そしてすべての修正は元の再現手順で再検証した。未解決のまま残るものは、
+            私たちの頭の中ではなく脅威モデルに文書化されている：検証を遅らせる
+            辛抱強いソルバー（M2、行動シグナル）、新しいIDを使った分散攻撃
+            （その後M1のネットワークフィンガープリントで部分的に対処 ——
+            <a href="m1-complete.html">003</a>参照）、ノードごとのキーストア
+            （M5、共有KMS/HSM）。
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

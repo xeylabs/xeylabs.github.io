@@ -19,6 +19,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .post-body tr.group td { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; background: rgba(16,18,16,.05); border-bottom: 1px solid var(--ink); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Lewati ke konten</a>
@@ -52,14 +64,14 @@
         <h1>Memantapkan Mythic.</h1>
         <div class="post-body">
           <p>
-            Entri ini mencatat satu pekan kerja di
+            Selama satu pekan kami berhenti membangun
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            dalam satu tarikan: dua item roadmap M1 dan satu pass
-            pemantapan yang digerakkan pengujian adversarial terhadap
-            server kami sendiri. Pengujian menghasilkan dua belas temuan;
-            semuanya diperbaiki, masing-masing dipin regression test, dan
-            setiap fix diverifikasi ulang dengan reproduksi aslinya sebelum
-            disebut selesai.
+            dan mencoba merusaknya — black-box terhadap server yang hidup,
+            white-box di mana black box tak cukup. Pekan itu menghasilkan
+            dua belas temuan. Semuanya diperbaiki, dipin regression test,
+            dan diverifikasi ulang terhadap reproduksi aslinya sebelum kami
+            menyebutnya selesai. Entri ini juga mencatat dua item roadmap M1
+            yang mendarat di pass yang sama: rotasi kunci dan store Redis.
           </p>
 
           <h2>Rotasi kunci tanpa downtime (ADR-0006)</h2>
@@ -78,6 +90,49 @@
             Origin tetap memverifikasi token secara lokal, memilih kunci
             lewat klaim <code>kid</code>.
           </p>
+
+          <div class="fig" role="img" aria-label="Lini masa rotasi kunci: kunci A menandatangani hingga rotasi, kunci B mengambil alih, kunci A tetap di JWKS selama jendela retensi yang lebih lama dari usia token mana pun.">
+            <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">LINI MASA ROTASI KUNCI</text>
+              <g font-size="11" fill="#55584F">
+                <text x="20" y="70">penandatanganan</text>
+                <text x="20" y="130">JWKS mengiklankan</text>
+                <text x="20" y="190">usia token</text>
+              </g>
+              <g stroke="#D9D7CE" stroke-width="1">
+                <line x1="180" y1="60" x2="940" y2="60"/>
+                <line x1="180" y1="120" x2="940" y2="120"/>
+                <line x1="180" y1="180" x2="940" y2="180"/>
+              </g>
+              <g font-size="11" text-anchor="middle">
+                <rect x="180" y="44" width="380" height="32" fill="#101210"/>
+                <text x="370" y="65" fill="#F4F3EE">kunci A menandatangani</text>
+                <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="750" y="65" fill="#101210">kunci B menandatangani</text>
+                <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="460" y="125" fill="#101210">kunci A + kunci B</text>
+                <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="840" y="125" fill="#101210">kunci B</text>
+                <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
+                <text x="270" y="185" fill="#101210">TTL token</text>
+              </g>
+              <g font-size="10" fill="#55584F" text-anchor="middle">
+                <text x="560" y="215">rotasi (MYTHIC_KEY_MAX_AGE)</text>
+                <text x="740" y="215">A keluar (MYTHIC_KEY_RETENTION)</text>
+              </g>
+              <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+            </svg>
+            <p class="figcap mono">GBR. 1 — Kunci retired hidup lebih lama dari token yang ditandatanganinya. Rotasi tak pernah membatalkan token yang masih hidup.</p>
+          </div>
+
+          <p>
+                      Keystore berupa file JSON yang ditulis atomik; file seed legacy
+                      32-byte tetap bisa dimuat dan bermigrasi saat simpan pertama.
+                      Origin tetap memverifikasi token secara lokal, memilih kunci
+                      lewat klaim <code>kid</code> — tanpa perlu panggilan koordinasi.
+                    </p>
+
 
           <h2>Store: Redis untuk multi-node (ADR-0009)</h2>
           <p>
@@ -179,15 +234,30 @@
             </tbody>
           </table>
           </div>
+          <p>
+                      Fix score-clamp layak ditampilkan karena ia duduk di trust
+                      boundary — nilai yang akhirnya ditandatangani di dalam token:
+                    </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+          // dashboards, tuning docs). Hostile tuning must clamp
+          // here, not leak 500 into tokens (red-team H3).
+          if score &gt; 100 {
+              score = 100
+          }
+          if score &lt; 0 {
+              score = 0
+          }</code></pre>
           <h2>Verifikasi</h2>
           <p>
             Setiap temuan punya reproduksi; setiap fix punya regression test
             (<code>go test ./... -race</code>, plus typecheck dan test SDK),
             dan setiap fix diverifikasi ulang dengan reproduksi aslinya.
-            Yang masih terbuka terdokumentasi di threat model: solver sabar
-            yang menunda verifikasi (M2, sinyal behavioral), serangan
-            terdistribusi dengan identitas segar (M1, fingerprint
-            jaringan), dan keystore per-node (M5, KMS/HSM bersama).
+            Yang masih terbuka terdokumentasi di threat model, bukan di
+            kepala kami: solver sabar yang menunda verifikasi (M2, sinyal
+            behavioral), serangan terdistribusi dengan identitas segar
+            (sebagian sudah ditangani oleh fingerprint jaringan M1 — lihat
+            <a href="m1-complete.html">003</a>), dan keystore per-node (M5,
+            KMS/HSM bersama).
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

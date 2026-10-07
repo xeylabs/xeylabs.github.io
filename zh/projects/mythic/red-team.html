@@ -19,6 +19,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .post-body tr.group td { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; background: rgba(16,18,16,.05); border-bottom: 1px solid var(--ink); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -52,11 +64,12 @@
         <h1>Mythic 加固。</h1>
         <div class="post-body">
           <p>
-            这条记录把
+            有一周，我们停下构建
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            的一周工作汇总在一起：M1 路线图的两项内容，以及由针对自建服务器的
-            对抗性测试驱动的一轮加固。测试产出十二项发现；全部修复，每一项都由
-            回归测试钉住，每个修复都在宣告完成之前用原始复现步骤重新验证过。
+            ，转而尝试攻破它 —— 对线上服务器做黑盒测试，黑盒不够的地方再用
+            白盒确认。这一周产出了十二项发现。每一项都已修复、由回归测试钉住，
+            并在我们宣布完成之前用原始复现重新验证。本篇还记录了同一轮中落地的
+            两个 M1 路线图事项：密钥轮换和 Redis 存储。
           </p>
 
           <h2>零停机密钥轮换 (ADR-0006)</h2>
@@ -70,6 +83,48 @@
             文件；旧版 32 字节种子文件仍可加载并在首次保存时迁移。源站照旧
             本地验证令牌，按 <code>kid</code> 声明选择密钥。
           </p>
+
+          <div class="fig" role="img" aria-label="密钥轮换时间线：轮换前由密钥 A 签名，之后由密钥 B 接管，密钥 A 在 JWKS 中保留至超过任何令牌有效期的留存窗口。">
+            <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">密钥轮换时间线</text>
+              <g font-size="11" fill="#55584F">
+                <text x="20" y="70">签名</text>
+                <text x="20" y="130">JWKS 公示</text>
+                <text x="20" y="190">令牌有效期</text>
+              </g>
+              <g stroke="#D9D7CE" stroke-width="1">
+                <line x1="180" y1="60" x2="940" y2="60"/>
+                <line x1="180" y1="120" x2="940" y2="120"/>
+                <line x1="180" y1="180" x2="940" y2="180"/>
+              </g>
+              <g font-size="11" text-anchor="middle">
+                <rect x="180" y="44" width="380" height="32" fill="#101210"/>
+                <text x="370" y="65" fill="#F4F3EE">密钥 A 签名</text>
+                <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="750" y="65" fill="#101210">密钥 B 签名</text>
+                <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="460" y="125" fill="#101210">密钥 A + 密钥 B</text>
+                <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="840" y="125" fill="#101210">密钥 B</text>
+                <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
+                <text x="270" y="185" fill="#101210">令牌 TTL</text>
+              </g>
+              <g font-size="10" fill="#55584F" text-anchor="middle">
+                <text x="560" y="215">轮换 (MYTHIC_KEY_MAX_AGE)</text>
+                <text x="740" y="215">A 退出 (MYTHIC_KEY_RETENTION)</text>
+              </g>
+              <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+            </svg>
+            <p class="figcap mono">图 1 — 退役密钥的存活时间超过其签发的令牌。轮换从不使有效令牌失效。</p>
+          </div>
+
+          <p>
+                      密钥库是以原子方式写入的 JSON 文件；旧版 32 字节种子文件仍可加载，
+                      并在首次保存时迁移。源站继续在本地验证令牌，按 <code>kid</code>
+                      声明选择密钥 —— 无需协调调用。
+                    </p>
+
 
           <h2>存储：面向多节点的 Redis (ADR-0009)</h2>
           <p>
@@ -166,13 +221,25 @@
             </tbody>
           </table>
           </div>
+          <p>
+                      分值钳制这项修复值得展示，因为它处在信任边界上 —— 最终被签名进令牌的值：
+                    </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+          // dashboards, tuning docs). Hostile tuning must clamp
+          // here, not leak 500 into tokens (red-team H3).
+          if score &gt; 100 {
+              score = 100
+          }
+          if score &lt; 0 {
+              score = 0
+          }</code></pre>
           <h2>验证</h2>
           <p>
-            每项发现都有复现步骤；每个修复都有回归测试
-            （<code>go test ./... -race</code>，外加 SDK 的类型检查与测试），
-            且每个修复都用原始复现重新验证过。尚未解决的部分记录在威胁模型
-            中：推迟验证的耐心求解器（M2，行为信号），使用新鲜身份的分布式
-            攻击（M1，网络指纹），以及按节点的密钥库（M5，共享 KMS/HSM）。
+            每项发现都有复现；每项修复都有回归测试（<code>go test ./... -race</code>，
+            外加 SDK 类型检查和测试），每项修复都用原始复现重新验证。仍未解决的都
+            记在威胁模型里，而不是记在我们脑子里：推迟验证的耐心求解者（M2，行为信号）、
+            使用全新身份的分布式攻击（此后已部分被 M1 网络指纹缓解 —— 见
+            <a href="m1-complete.html">003</a>）、以及按节点划分的密钥库（M5，共享 KMS/HSM）。
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>
