@@ -19,6 +19,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .post-body tr.group td { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; background: rgba(16,18,16,.05); border-bottom: 1px solid var(--ink); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -47,38 +59,80 @@
           <span>002 / BUILD</span>
           <span>29.09.2026</span>
           <span>BY XEY LABS</span>
-          <span>8 MIN READ</span>
+          <span>10 MIN READ</span>
         </div>
         <h1>Hardening Mythic.</h1>
         <div class="post-body">
           <p>
-            This entry records one week of work on
+            For one week we stopped building
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            in one pass: two M1 roadmap items and a hardening pass driven by
-            adversarial testing of our own server. The testing produced
-            twelve findings; all twelve are fixed, each pinned by a
-            regression test, and each fix was re-verified against the
-            original reproduction before it was called done.
+            and tried to break it instead — black-box against a live server,
+            white-box where the black box wasn't enough. The week produced
+            twelve findings. Every one is fixed, pinned by a regression test,
+            and re-verified against its original reproduction before we
+            called it done. This entry also records the two M1 roadmap items
+            that landed in the same pass: key rotation and a Redis store.
           </p>
 
-          <h2>Key rotation without downtime (ADR-0006)</h2>
+          <h2>Key rotation without downtime</h2>
           <p>
             Until this week Mythic signed every decision token with a single
             Ed25519 key; rotating it meant a restart and invalidated every
             live token. The server now keeps a key ring with exactly one
-            active signer. Rotation is time-based and runs in-process
-            (<code>MYTHIC_KEY_MAX_AGE</code>, default 720h); retired keys
-            stay advertised in the JWKS for
-            <code>MYTHIC_KEY_RETENTION</code> (default 24h) — longer than
-            any token they signed can remain valid. The keystore is a JSON
-            file written atomically; legacy 32-byte seed files still load
-            and migrate on first save. Origins keep verifying tokens
-            locally, selecting the key by the <code>kid</code> claim.
+            active signer (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0006-key-rotation.md" rel="noopener">ADR-0006</a>).
+            Rotation is time-based and runs in-process
+            (<code>MYTHIC_KEY_MAX_AGE</code>, default 720h). Retired keys stay
+            advertised in the JWKS for <code>MYTHIC_KEY_RETENTION</code>
+            (default 24h) — deliberately longer than any token they signed
+            can remain valid, so in-flight tokens never break mid-rotation:
           </p>
 
-          <h2>Store: Redis for multi-node (ADR-0009)</h2>
+          <div class="fig" role="img" aria-label="Key rotation timeline: key A signs until rotation, key B takes over, key A stays in JWKS for the retention window which outlasts any token lifetime.">
+            <svg viewBox="0 0 960 240" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">KEY ROTATION TIMELINE</text>
+              <g font-size="11" fill="#55584F">
+                <text x="20" y="70">signing</text>
+                <text x="20" y="130">JWKS advertises</text>
+                <text x="20" y="190">token lifetime</text>
+              </g>
+              <g stroke="#D9D7CE" stroke-width="1">
+                <line x1="180" y1="60" x2="940" y2="60"/>
+                <line x1="180" y1="120" x2="940" y2="120"/>
+                <line x1="180" y1="180" x2="940" y2="180"/>
+              </g>
+              <g font-size="11" text-anchor="middle">
+                <rect x="180" y="44" width="380" height="32" fill="#101210"/>
+                <text x="370" y="65" fill="#F4F3EE">key A signs</text>
+                <rect x="560" y="44" width="380" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="750" y="65" fill="#101210">key B signs</text>
+                <rect x="180" y="104" width="560" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="460" y="125" fill="#101210">key A + key B</text>
+                <rect x="740" y="104" width="200" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="840" y="125" fill="#101210">key B</text>
+                <rect x="180" y="164" width="180" height="32" fill="#F4F3EE" stroke="#101210" stroke-width="1" stroke-dasharray="5 4"/>
+                <text x="270" y="185" fill="#101210">token TTL</text>
+              </g>
+              <g font-size="10" fill="#55584F" text-anchor="middle">
+                <text x="560" y="215">rotation (MYTHIC_KEY_MAX_AGE)</text>
+                <text x="740" y="215">A drops out (MYTHIC_KEY_RETENTION)</text>
+              </g>
+              <line x1="560" y1="36" x2="560" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="740" y1="96" x2="740" y2="200" stroke="#101210" stroke-width="1" stroke-dasharray="4 4"/>
+            </svg>
+            <p class="figcap mono">FIG. 1 — Retired keys outlive the tokens they signed. Rotation never invalidates a live token.</p>
+          </div>
+
           <p>
-            The in-memory store bound mythicd to a single node.
+            The keystore is a JSON file written atomically; legacy 32-byte
+            seed files still load and migrate on first save. Origins keep
+            verifying tokens locally, selecting the key by the
+            <code>kid</code> claim — no coordination call needed.
+          </p>
+
+          <h2>A store that survives more than one node</h2>
+          <p>
+            The in-memory store bound mythicd to a single node
+            (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0009-redis-store.md" rel="noopener">ADR-0009</a>).
             <code>MYTHIC_STORE=redis</code> selects a Redis backend:
             single-use challenges via <code>GETDEL</code> (atomic
             fetch-and-delete) and pressure counters as sorted sets pruned by
@@ -98,79 +152,103 @@
             — M5, not solved by this change.
           </p>
 
-          <h2>Hardening pass: twelve findings</h2>
+          <h2>Twelve findings, grouped</h2>
           <p>
-            Adversarial testing — black-box against a live server, with
-            white-box confirmation where needed — produced twelve findings.
-            The notable ones, grouped by area:
+            Each row: what the attack showed, then what changed. Every fix
+            carries a regression test; every fix was re-run against its
+            original reproduction.
           </p>
-
-          <h3>Transport and limits</h3>
+          <table>
+            <thead>
+              <tr><th style="width:22%">Area</th><th style="width:39%">Cause</th><th>Fix</th></tr>
+            </thead>
+            <tbody>
+              <tr class="group"><td colspan="3">Transport &amp; limits</td></tr>
+              <tr>
+                <td>Rate-limit budget</td>
+                <td>Budget was consumed <em>after</em> validation — invalid-JSON and unknown-site-key floods ran unthrottled (600 requests at 225 req/s, zero 429s).</td>
+                <td>Budget is now counted <em>before</em> validation.</td>
+              </tr>
+              <tr>
+                <td>IPv6 pressure key</td>
+                <td>Limiter keyed IPv6 at /128 — one /64 controlled 2⁶⁴ identities (5,000 requests from a single block, zero hits).</td>
+                <td>Counters aggregate IPv6 to /64 (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).</td>
+              </tr>
+              <tr>
+                <td>Connection timeouts</td>
+                <td>No body/read/idle timeouts — a slow client held connections indefinitely.</td>
+                <td><code>ReadTimeout</code>, <code>WriteTimeout</code>, <code>IdleTimeout</code> are set.</td>
+              </tr>
+              <tr class="group"><td colspan="3">Challenge economics</td></tr>
+              <tr>
+                <td>Solve-time floor</td>
+                <td>Floor modeled a 50k H/s worker; measured <code>crypto.subtle</code> workers run ~400k H/s — honest clients were flagged implausible.</td>
+                <td>Floor is now a low quantile of honest solve time (<code>2^d / (2M × 32)</code>): false positives ≤ ~6% worst case, GPU-class answers trip it ~96% (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>).</td>
+              </tr>
+              <tr>
+                <td>Delayed verification</td>
+                <td>Any client could simply delay verification past the wall-clock floor — the floor cannot catch patience.</td>
+                <td>Documented in the threat model as the behavioral layer's job (M2), not the floor's.</td>
+              </tr>
+              <tr class="group"><td colspan="3">Tokens &amp; configuration</td></tr>
+              <tr>
+                <td>Token TTL</td>
+                <td>The invariant "tokens never outlive their challenge" was unenforced — a 1-hour token was issued from a 5-second challenge.</td>
+                <td><code>TokenTTL</code> is now clamped to <code>ChallengeTTL</code>.</td>
+              </tr>
+              <tr>
+                <td>Score clamp</td>
+                <td>Hostile tuning (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) leaked a risk score of 500 into signed tokens.</td>
+                <td>Scores clamp to 0–100 at the engine boundary; penalties above 100 refuse to start.</td>
+              </tr>
+              <tr>
+                <td>Config validation</td>
+                <td>A negative <code>MYTHIC_BASE_DIFFICULTY</code> issued challenges any nonce satisfied.</td>
+                <td>Configuration is validated at startup; out-of-range values refuse to serve.</td>
+              </tr>
+              <tr class="group"><td colspan="3">State handling</td></tr>
+              <tr>
+                <td>Keystore concurrency</td>
+                <td>Two processes sharing one keystore collided on the same temp file or silently split-brained their signing keys.</td>
+                <td>Temp names are process-unique; saves refuse to overwrite a file changed since load.</td>
+              </tr>
+              <tr>
+                <td>JSON trailing bytes</td>
+                <td>Trailing bytes after a JSON value were silently ignored.</td>
+                <td>Trailing bytes are rejected.</td>
+              </tr>
+              <tr>
+                <td>Counter saturation</td>
+                <td>The sliding-window counter stored one entry per hit — including rate-limited ones. A million hits from one identity cost ~16.4 MB of heap and 595 s of CPU.</td>
+                <td>Counters saturate at <code>IPLimit+1</code>: the same flood costs +0.00 MB and 714 ms.</td>
+              </tr>
+            </tbody>
+          </table>
           <p>
-            The rate-limit budget was consumed only after validation:
-            invalid-JSON and unknown-site-key floods ran unthrottled (600
-            requests at 225 req/s, zero 429s). Budget is now counted before
-            validation. The limiter keyed IPv6 at /128 — a single /64
-            controlled 2⁶⁴ identities (5,000 requests from one block, zero
-            hits); counters now aggregate IPv6 to /64
-            (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).
-            No body/read/idle timeouts existed; a slow client held
-            connections indefinitely. <code>ReadTimeout</code>,
-            <code>WriteTimeout</code>, and <code>IdleTimeout</code> are set.
+            The score-clamp fix is worth showing because it sits at a trust
+            boundary — the value that ends up signed inside tokens:
           </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+// dashboards, tuning docs). Hostile tuning must clamp
+// here, not leak 500 into tokens (red-team H3).
+if score > 100 {
+    score = 100
+}
+if score &lt; 0 {
+    score = 0
+}</code></pre>
 
-          <h3>Challenge economics</h3>
-          <p>
-            The solve-time floor modeled a 50k H/s worker; measured
-            <code>crypto.subtle</code> workers run ~400k H/s, so honest
-            clients were flagged as implausible — and any client could
-            simply delay verification past the floor. The floor is now a
-            low quantile of honest solve time
-            (<code>2^d / (2M × 32)</code>,
-            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>):
-            false positives ≤ ~6% worst case, GPU-class answers trip it
-            ~96% of the time. The threat model states that a wall-clock
-            floor cannot catch a client that delays verification — that is
-            the behavioral layer's job (M2).
-          </p>
-
-          <h3>Tokens and configuration</h3>
-          <p>
-            The documented invariant that tokens never outlive their
-            challenge was unenforced — a 1-hour token was issued from a
-            5-second challenge. <code>TokenTTL</code> is now clamped to
-            <code>ChallengeTTL</code>. Hostile tuning
-            (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) leaked a risk score
-            of 500 into signed tokens; scores clamp to 0–100 and penalties
-            above 100 refuse to start. A negative
-            <code>MYTHIC_BASE_DIFFICULTY</code> issued challenges any nonce
-            satisfied; configuration is validated at startup and
-            out-of-range values refuse to serve.
-          </p>
-
-          <h3>State handling</h3>
-          <p>
-            Two processes sharing one keystore collided on the same temp
-            file or silently split-brained their signing keys; temp names
-            are process-unique and saves refuse to overwrite a file changed
-            since load. Trailing bytes after a JSON value were silently
-            ignored; they are rejected. The sliding-window counter stored
-            one entry per hit — including rate-limited ones — so a million
-            hits from one identity cost ~16.4 MB of heap and 595 s of CPU.
-            Counters now saturate at <code>IPLimit+1</code>: the same flood
-            costs +0.00 MB and 714 ms.
-          </p>
-
-          <h2>Verification</h2>
+          <h2>Verification — and what stays open</h2>
           <p>
             Every finding has a reproduction; every fix has a regression
             test (<code>go test ./... -race</code>, plus the SDK typecheck
             and tests), and every fix was re-verified against the original
             reproduction. What remains open is documented in the threat
-            model: patient solvers that delay verification (M2, behavioral
-            signals), distributed attacks with fresh identities (M1,
-            network fingerprints), and per-node keystores (M5, shared
-            KMS/HSM).
+            model, not in our heads: patient solvers that delay verification
+            (M2, behavioral signals), distributed attacks with fresh
+            identities (partly addressed since by M1 network fingerprints —
+            see <a href="m1-complete.html">003</a>), and per-node keystores
+            (M5, shared KMS/HSM).
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

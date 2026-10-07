@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>003 — Completing M1 — XEY Labs</title>
-  <meta name="description" content="Build log 003. M1 complete: JA4 TLS fingerprinting, ASN network scoring, Web Worker PoW solver, and native origin verification for Node.js and Python — with test results and stated limitations.">
+  <meta name="description" content="Build log 003 (revised). M1: JA4 TLS fingerprinting, ASN network scoring, Web Worker PoW solver, native origin verification — plus the post-claim audit that found seven gaps, fixed six, and left one honestly open.">
   <link rel="canonical" href="https://xeylabs.github.io/projects/mythic/m1-complete.html">
   <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/m1-complete.html">
   <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/m1-complete.html">
@@ -19,6 +19,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -46,41 +57,110 @@
         <div class="post-meta mono">
           <span>003 / BUILD</span>
           <span>06.10.2026</span>
+          <span>REVISED 08.10.2026</span>
           <span>BY XEY LABS</span>
-          <span>6 MIN READ</span>
+          <span>9 MIN READ</span>
         </div>
         <h1>M1 Complete: Network Signals, Worker Solver, Origin SDKs.</h1>
         <div class="post-body">
           <p>
-            M1 is done. Four items closed in
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
-            JA4 TLS fingerprinting, ASN-based network scoring, a packaged Web
-            Worker for proof-of-work, and origin verification helpers for
-            Node.js and Python. Commits
+            M1 is the milestone where "adaptive" stopped being an adjective in
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>'s
+            README and became a mechanism. Until now the server priced abuse
+            with one instrument — proof-of-work difficulty. M1 adds the
+            signals that let it price <em>who</em> is asking: JA4 TLS
+            fingerprints and ASN reputation feed a capped risk engine, the
+            PoW solver moves off the main thread, and origins can verify
+            verdicts natively in Node.js and Python. Commits
             <code>bc87ed9</code> through <code>c7e4fc3</code>.
           </p>
+          <p>
+            <mark>This post was revised after an internal audit found seven
+            gaps in the original "M1 complete" claim.</mark> Six are fixed in
+            commit <code>067e9f7</code>; one remains honestly open and is
+            stated below. The corrections are documented here, not buried.
+          </p>
 
-          <h2>JA4 fingerprinting</h2>
+          <h2>Why signals — and why advisory only</h2>
+          <p>
+            Bot mitigation lives or dies on signals, and every signal in
+            isolation is weak. A JA4 fingerprint can be parroted byte-for-byte
+            by any client that bothers. An ASN is a heuristic — datacenter
+            today, residential proxy tomorrow. Treat either as ground truth
+            and you have built a blocklist with extra steps.
+          </p>
+          <p>
+            So M1 treats every network signal as <strong>advisory</strong>:
+            small, hard-capped contributions that can raise the price of a
+            request but can never unilaterally clear it or condemn it. The
+            flow looks like this:
+          </p>
+
+          <div class="fig" role="img" aria-label="Risk signal flow: JA4, ASN and behavioral signals feed risk.Input, capped scoring produces a 0 to 100 score, which maps to allow, challenge, or block.">
+            <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">RISK SIGNAL FLOW</text>
+              <g font-size="12" text-anchor="middle">
+                <rect x="20" y="60" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="86" fill="#101210">JA4 fingerprint</text>
+                <text x="110" y="104" font-size="10" fill="#55584F">proxy-set header</text>
+                <rect x="20" y="140" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="166" fill="#101210">ASN</text>
+                <text x="110" y="184" font-size="10" fill="#55584F">MaxMind lookup</text>
+                <rect x="20" y="220" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="246" fill="#101210">Behavioral</text>
+                <text x="110" y="264" font-size="10" fill="#55584F">biometrics</text>
+              </g>
+              <g stroke="#101210" stroke-width="1.5">
+                <line x1="200" y1="92" x2="300" y2="140"/><polygon points="300,140 290,134 290,146" fill="#101210"/>
+                <line x1="200" y1="172" x2="300" y2="160"/><polygon points="300,160 290,154 290,166" fill="#101210"/>
+                <line x1="200" y1="252" x2="300" y2="180"/><polygon points="300,180 290,174 290,186" fill="#101210"/>
+              </g>
+              <g font-size="12" text-anchor="middle">
+                <rect x="300" y="120" width="170" height="80" fill="#101210"/>
+                <text x="385" y="152" fill="#F4F3EE">risk.Input</text>
+                <text x="385" y="172" font-size="10" fill="#C6F531">challenge + verify</text>
+              </g>
+              <line x1="470" y1="160" x2="550" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="550,160 540,154 540,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="550" y="120" width="170" height="80" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="635" y="146" fill="#101210">capped scoring</text>
+                <text x="635" y="166" font-size="11" fill="#55584F">score ∈ [0, 100]</text>
+                <text x="635" y="184" font-size="10" fill="#55584F">caps validated</text>
+              </g>
+              <line x1="720" y1="160" x2="790" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="790,160 780,154 780,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="790" y="80" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="109" fill="#101210">allow</text>
+                <rect x="790" y="136" width="150" height="48" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="165" fill="#101210">challenge</text>
+                <rect x="790" y="192" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="221" fill="#101210">block</text>
+              </g>
+            </svg>
+            <p class="figcap mono">FIG. 1 — Every signal is advisory and capped. No single signal can clear or condemn a request on its own.</p>
+          </div>
+
+          <h2>JA4 fingerprinting: a discount, capped, distrusted</h2>
           <p>
             <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0010-ja4-asn-signals.md" rel="noopener">ADR-0010</a>.
             The server reads the JA4 fingerprint from
             <code>X-Mythic-JA4</code>, set by the terminating proxy — never
             from the client directly, since any client-supplied value is
-            attacker-controlled. Fingerprints are matched against
-            known-browser JA4 patterns; a match applies a small risk
-            discount, capped so it cannot single-handedly clear a
-            challenge. Malformed values and prefix-only matches are
-            rejected from the discount path entirely.
+            attacker-controlled. Fingerprints match against known-browser JA4
+            patterns; a match applies a small risk discount, capped so it
+            cannot single-handedly clear a challenge. Malformed values and
+            prefix-only matches are rejected from the discount path entirely
+            (<code>a8ce95a</code>). All caps are validated at startup; hostile
+            tuning values refuse to serve (<code>8f560bd</code>).
           </p>
           <p>
-            Stated limitation: JA4 is advisory. A client that parrots a
-            real browser's fingerprint byte-for-byte is indistinguishable
-            at this layer. The discount is small precisely because the
-            signal is spoofable — it raises the cost of naive scripting,
-            nothing more.
+            Stated limitation: JA4 is advisory. A client that parrots a real
+            browser's fingerprint byte-for-byte is indistinguishable at this
+            layer. The discount is small precisely because the signal is
+            spoofable — it raises the cost of naive scripting, nothing more.
           </p>
 
-          <h2>ASN scoring</h2>
+          <h2>ASN scoring: a heuristic that fails closed</h2>
           <p>
             Same ADR. Client IPs resolve to Autonomous System Numbers via a
             MaxMind GeoLite2-ASN database (<code>MYTHIC_ASN_DB</code>).
@@ -92,71 +172,149 @@
             design — the operator chose not to enable it.
           </p>
           <p>
-            Both JA4 and ASN feed <code>risk.Input</code> and are evaluated
-            in the challenge and verify paths. Contributions are capped in
-            <code>risk.Config</code> and validated at startup; hostile
-            tuning values refuse to serve.
+            <mark>Audit correction:</mark> the original tests only covered
+            failure modes (nil, empty path, bad path, invalid IP) — no
+            positive lookup was ever exercised.
+            <code>067e9f7</code> added <code>TestASNLookupPositive</code>
+            against a synthetic <code>.mmdb</code> fixture generated
+            in-repo (not licensed MaxMind data), pinning the happy path:
+            datacenter ranges score, residential ranges don't.
           </p>
 
-          <h2>Web Worker PoW solver</h2>
+          <h2>Web Worker solver: PoW off the main thread</h2>
           <p>
             The SHA-256 grind previously ran on the main thread — at
             difficulty 24+ the page froze for seconds. The SDK now ships
             <code>solveInWorker()</code>, which stringifies a
-            self-contained solver into a Blob URL and runs it off-thread.
-            No separate worker file to deploy; no bundler plugin required.
+            self-contained solver into a Blob URL and runs it off-thread. No
+            separate worker file to deploy; no bundler plugin required.
             Progress callbacks fire every 2048 iterations;
             <code>AbortSignal</code> terminates the worker and revokes the
-            URL. Where <code>Worker</code> is undefined (SSR, Node), it
-            falls back to the main-thread <code>solve()</code> — slower,
-            never broken.
+            URL:
           </p>
+          <pre><code>export async function solveInWorker(
+  challenge: Challenge,
+  opts: SolveInWorkerOptions = {},
+): Promise&lt;Solution&gt; {
+  // No Worker API (Node, SSR) → fall back to main thread.
+  if (typeof Worker === "undefined") {
+    const { solve } = await import("./pow");
+    return solve(challenge, opts);
+  }
+  const workerCode = `(${workerMain.toString()})()`;
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  // …postMessage challenge, await solution, revoke URL
+}</code></pre>
           <p>
             <code>MythicClient</code> takes <code>useWorker</code> (default
-            <code>true</code>) and now also auto-starts the behavioral
-            collector on construction, attaching features to challenge
-            hints. One client, one flow, no manual wiring.
+            <code>true</code>) and auto-starts the behavioral collector on
+            construction. One client, one flow, no manual wiring.
+          </p>
+          <p>
+            <mark>Known gap, stated plainly:</mark> the worker path has only
+            ever run under Bun's Worker implementation — never in Chromium,
+            Firefox, or Safari. This is documented in
+            <code>sdk/js/README.md</code>, not claimed otherwise. A
+            Playwright suite was attempted; the build environment could not
+            fetch a browser binary. Until that changes, real-browser
+            behavior is untested and unclaimed.
           </p>
 
           <h2>Origin verification: Node.js and Python</h2>
           <p>
             Decision tokens were verifiable only in Go
-            (<code>server/xtoken</code>). Origins now get native helpers:
-          </p>
-          <p>
+            (<code>server/xtoken</code>). Origins now get native helpers.
             <code>sdk/js/src/verify.ts</code> —
             <code>parsePublicKey(x)</code> wraps the JWKS raw key in DER
             SPKI; <code>verifyToken(pub, token)</code> checks the Ed25519
             signature over raw payload bytes (no pre-hash), enforces
-            canonical base64url re-encoding, and rejects expired tokens.
+            canonical base64url re-encoding, and rejects expired tokens:
           </p>
+          <pre><code>// Canonical encodings only: re-encoding the decoded bytes
+// must reproduce the input exactly. Go's base64 decoder
+// silently discards unused low bits of a trailing character,
+// so distinct strings can decode to the same token.
+if base64.RawURLEncoding.EncodeToString(payload) != payloadPart ||
+    base64.RawURLEncoding.EncodeToString(sig) != sigPart {
+    return nil, fmt.Errorf("%w: non-canonical encoding", ErrInvalidToken)
+}</code></pre>
           <p>
             <code>sdk/python/mythic/verify.py</code> — same semantics via
             the <code>cryptography</code> package:
             <code>parse_public_key</code>, <code>verify_token</code>,
             <code>TokenClaims</code> dataclass, <code>TokenError</code> on
-            any rejection.
+            any rejection. The Python SDK is now in CI
+            (<code>.github/workflows/sdk-python-ci.yml</code>) and runs
+            under <code>make test</code> — previously nothing executed it
+            automatically.
           </p>
           <p>
-            Verified cross-language: a token minted by the Go server
-            verifies in both. Twelve tests total (six per language)
-            covering valid tokens, wrong keys, expiry, malformed input,
-            bad keys, and tampered payloads.
+            Verified cross-language and committed:
+            <code>e2e/crosslang.sh</code> mints a token from a live Go
+            server and verifies it identically in Go, Python, and JS
+            (<code>dec=allow risk=6</code> across all three).
           </p>
 
-          <h2>Test results</h2>
+          <h2>Evidence</h2>
+          <table>
+            <thead>
+              <tr><th>Suite</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>go build ./...</code> · <code>go vet ./...</code></td><td>clean</td></tr>
+              <tr><td><code>go test -race -count=1</code></td><td>7/7 packages, 0 data races</td></tr>
+              <tr><td><code>bun test</code> (JS SDK)</td><td>17/17</td></tr>
+              <tr><td><code>tsc --noEmit</code> · <code>bun run build</code></td><td>clean</td></tr>
+              <tr><td><code>pytest</code> (Python SDK)</td><td>6/6</td></tr>
+              <tr><td><code>e2e/crosslang.sh</code></td><td>Go, Python, JS agree on a live token</td></tr>
+            </tbody>
+          </table>
           <p>
-            <code>go vet</code> clean.
-            <code>go test ./... -race -count=1</code> green across all
-            packages. <code>tsc --noEmit</code> clean,
-            <code>bun test</code> 15/15. <code>pytest</code> 6/6.
-            Per project rule, every new signal's bypass is documented
-            before the signal ships — see ADR-0010 § "Bypasses".
+            The scoring contract itself is pinned in code — hostile tuning
+            cannot leak an out-of-range score into a signed token
+            (red-team finding H3, regression-tested):
           </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+// dashboards, tuning docs). Hostile tuning must clamp
+// here, not leak 500 into tokens (red-team H3).
+if score > 100 {
+    score = 100
+}
+if score &lt; 0 {
+    score = 0
+}</code></pre>
+
+          <h2>What the audit changed</h2>
           <p>
-            Remaining: M2 behavioral biometrics (closes the delay-attack
-            gap the solve-time floor cannot cover) and M5 shared keystore
-            for cross-node token verification.
+            After the original "M1 complete" claim, a from-scratch audit
+            (fresh clone, every suite re-run, adversarial pass over the
+            verify path) found seven gaps. Commit
+            <code>067e9f7</code> ("fix(audit): close all 7 M1 audit gaps")
+            closed six of them:
+          </p>
+          <ul>
+            <li>ASN positive test added (was failure-modes only).</li>
+            <li>Behavioral hints are now sent at <code>verify()</code> — previously the collector stopped after the challenge, leaving the server's verify-stage behavioral parsing as dead code in practice.</li>
+            <li>Python SDK added to CI and <code>make test</code>.</li>
+            <li>Cross-language E2E committed (<code>e2e/crosslang.sh</code>).</li>
+            <li><code>docs/ROADMAP.md</code> corrected — it had still marked finished M1 items as planned.</li>
+            <li>A misleading worker test name fixed (it claimed to test the fallback while testing the real worker path).</li>
+          </ul>
+          <p>
+            The seventh — a real-browser test for the Web Worker — remains
+            open and is documented as a known gap rather than claimed as
+            done. That is the current honest state of M1.
+          </p>
+
+          <h2>Open questions</h2>
+          <p>
+            Real-browser worker coverage is the one open item above. Beyond
+            it: an IP reputation feed is still planned (ROADMAP, honestly
+            marked), and M2 behavioral biometrics plus the M5 shared
+            keystore for cross-node verification remain the next milestones.
+            Per project rule, every new signal's bypass is documented before
+            the signal ships — see ADR-0010 § "Bypasses".
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

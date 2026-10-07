@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>001 — Mythic ships public — XEY Labs</title>
-  <meta name="description" content="Log 003. The lab's first project goes public: adaptive bot mitigation, never trust the client, AGPL — and the two holes we found by attacking it ourselves.">
+  <meta name="description" content="Log 001. The lab's first project goes public: adaptive bot mitigation, never trust the client, AGPL — and the two holes we found by attacking it ourselves.">
   <link rel="canonical" href="https://xeylabs.github.io/projects/mythic/ship-public.html">
   <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/ship-public.html">
   <link rel="alternate" hreflang="id" href="https://xeylabs.github.io/id/projects/mythic/ship-public.html">
@@ -19,6 +19,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -47,69 +55,117 @@
           <span>001 / SHIP</span>
           <span>28.09.2026</span>
           <span>BY XEY LABS</span>
-          <span>4 MIN READ</span>
+          <span>5 MIN READ</span>
         </div>
         <h1>Mythic ships public.</h1>
         <div class="post-body">
           <p>
             Today the lab's first project goes from repo to record:
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a> —
-            adaptive bot mitigation, built as a captcha replacement for the era
-            where captchas lose. AGPL-3.0, fully public, as of today.
+            adaptive bot mitigation, built as a captcha replacement for the
+            era where captchas lose. AGPL-3.0, fully public, as of today.
           </p>
 
-          <h2>The problem we picked</h2>
+          <h2>Captchas are dead, and the death is measurable</h2>
           <p>
-            Captchas are dead, and the death is measurable. Solving farms sell a
-            thousand answers for less than lunch. Vision models read image
-            puzzles like text. Stealth browsers walk past the fingerprint
-            checks that were supposed to catch them. Every static puzzle shares
-            one failure mode: <strong>one solver, discovered once, kills it
-            forever.</strong>
+            Solving farms sell a thousand answers for less than lunch.
+            Vision models read image puzzles like text. Stealth browsers
+            walk past the fingerprint checks that were supposed to catch
+            them. Every static puzzle shares one failure mode:
+            <strong>one solver, discovered once, kills it forever.</strong>
+            The economics favor the attacker at every step — so we stopped
+            trying to build a better puzzle and started pricing the abuse
+            instead.
           </p>
 
           <h2>The thesis: never trust the client</h2>
           <p>
-            Mythic assumes the browser is hostile by default. Every byte that
-            arrives from a client is adversarial input — so the client SDK is a
-            <em>sensor</em>, never a judge. Decisions happen server-side, in a
-            deterministic risk engine that outputs named, auditable reasons.
-            The pricing of abuse is layered: an adaptive proof-of-work costs a
-            human about one second inside a web worker — and the same cost,
-            per request, forever, for a bot farm. Risky traffic gets harder
-            challenges. Critical actions can demand cryptographic proof. And
-            the verdict travels as a short-lived, Ed25519-signed token your
-            backend verifies locally — no callback needed.
+            Mythic assumes the browser is hostile by default. Every byte
+            that arrives from a client is adversarial input — so the client
+            SDK is a <em>sensor</em>, never a judge. Decisions happen
+            server-side, in a deterministic risk engine that outputs named,
+            auditable reasons.
           </p>
           <p>
-            <mark>The goal was never "unbreakable". The goal is to make abuse
-            economically irrational.</mark>
+            The pricing of abuse is layered: an adaptive proof-of-work costs
+            a human about one second inside a web worker — and the same
+            cost, per request, forever, for a bot farm. Risky traffic gets
+            harder challenges. Critical actions can demand cryptographic
+            proof. And the verdict travels as a short-lived, Ed25519-signed
+            token your backend verifies locally — no callback needed.
           </p>
+
+          <div class="fig" role="img" aria-label="Cost asymmetry: a human pays about one second once, a bot farm pays the same cost on every request forever.">
+            <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">THE ECONOMIC ARGUMENT</text>
+              <g font-size="12">
+                <text x="20" y="80" fill="#101210">human</text>
+                <rect x="180" y="58" width="120" height="32" fill="#101210"/>
+                <text x="320" y="80" fill="#55584F" font-size="11">≈1s in a worker, then done</text>
+                <text x="20" y="150" fill="#101210">bot farm</text>
+                <rect x="180" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="312" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="444" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="600" y="150" fill="#101210" font-size="14">× N</text>
+                <text x="640" y="150" fill="#55584F" font-size="11">same ≈1s — every request, forever</text>
+              </g>
+              <text x="20" y="200" font-size="11" fill="#55584F">The goal was never "unbreakable". The goal is to make abuse economically irrational.</text>
+            </svg>
+            <p class="figcap mono">FIG. 1 — One second is nothing to a human and everything to a farm running a million requests.</p>
+          </div>
+
+          <h2>The verdict is a token, not a callback</h2>
+          <p>
+            When the server decides, it signs the decision — risk score,
+            difficulty, expiry — with Ed25519. Your origin verifies it
+            locally with the public key from the JWKS endpoint. No
+            per-request callback to mythicd, no shared secret to leak:
+          </p>
+          <pre><code>claims, err := xtoken.VerifyToken(pub, token)
+if err != nil {
+    // reject: malformed, bad signature, or expired
+}
+// claims.Decision and claims.Risk are yours to enforce;
+// verification only proves mythicd signed these claims.</code></pre>
+          <p>
+            The HTTP surface is two endpoints. Challenge in, proof out:
+          </p>
+          <pre><code>$ curl -s mythicd:8080/v1/challenge \
+    -d '{"site_key":"sk_live_..."}'
+# → {"id":"ch_01J…","difficulty":18,…}
+
+# solve the SHA-256 PoW, then:
+$ curl -s mythicd:8080/v1/verify \
+    -d '{"challenge_id":"ch_01J…","nonce":"48291033"}'
+# → decision token (or a harder challenge)</code></pre>
 
           <h2>We tried to break it first</h2>
           <p>
-            Before launch, we ran the attacks ourselves. A ten-thousand-mutation
-            storm over the token format caught a real acceptance bug: distinct
-            strings decoding to the same signed bytes. A live chaos session
-            found that one forged header defeated the per-IP rate limiter
-            twenty times out of twenty. Both are fixed. Both are pinned by
-            regression tests. A fuzzer now grinds the verification path in CI
-            on every push. The bypass reports were the useful part —
-            <strong>that's the culture we want this project to reward.</strong>
+            Before launch, we ran the attacks ourselves. A
+            ten-thousand-mutation storm over the token format caught a real
+            acceptance bug: distinct strings decoding to the same signed
+            bytes. A live chaos session found that one forged header
+            defeated the per-IP rate limiter twenty times out of twenty.
+            Both are fixed. Both are pinned by regression tests. A fuzzer
+            now grinds the verification path in CI on every push. The
+            bypass reports were the useful part —
+            <strong>that's the culture we want this project to
+            reward.</strong>
           </p>
 
           <h2>What it honestly can't do yet</h2>
           <p>
-            v0 loses to a funded operator with a stealth browser and a native
-            solver. We say so in the threat model, in writing. The answer is
-            roadmap, not vibes: behavioral biometrics, cryptographic step-up,
-            a learning engine. Public by default means the gaps are public too.
+            v0 loses to a funded operator with a stealth browser and a
+            native solver. We say so in the threat model, in writing. The
+            answer is roadmap, not vibes: behavioral biometrics,
+            cryptographic step-up, a learning engine. Public by default
+            means the gaps are public too.
           </p>
 
           <h2>License</h2>
           <p>
-            Everything — engine and SDK — is AGPL-3.0-or-later. Read it, clone
-            it, break it. If you break it, tell us first,
+            Everything — engine and SDK — is AGPL-3.0-or-later. Read it,
+            clone it, break it. If you break it, tell us first,
             <a href="https://github.com/xeylabs/mythic/security/advisories/new" rel="noopener">privately</a>.
             Contributions are welcome under the CLA in the repo.
           </p>
