@@ -104,75 +104,81 @@
 
           <h2>Pass pemantapan: dua belas temuan</h2>
           <p>
-            Pengujian adversarial — black-box terhadap server hidup, dengan
-            konfirmasi white-box bila perlu — menghasilkan dua belas
-            temuan. Yang penting, dikelompokkan per area:
+            Tiap baris: apa yang ditunjukkan serangan, lalu apa yang berubah. Setiap perbaikan membawa regression test; setiap perbaikan di-run ulang terhadap reproduksi aslinya.
           </p>
-
-          <h3>Transport dan limit</h3>
-          <p>
-            Budget rate-limit baru dikonsumsi setelah validasi: flood
-            invalid-JSON dan site key tak dikenal berjalan tanpa throttling
-            (600 request di 225 req/s, nol 429). Budget kini dihitung
-            sebelum validasi. Limiter mengunci IPv6 di /128 — satu /64
-            mengendalikan 2⁶⁴ identitas (5.000 request dari satu blok, nol
-            tersentuh); counter kini mengagregasi IPv6 ke /64
-            (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).
-            Tidak ada timeout body/read/idle; klien lambat menahan koneksi
-            tanpa batas. <code>ReadTimeout</code>,
-            <code>WriteTimeout</code>, dan <code>IdleTimeout</code> kini
-            diset.
-          </p>
-
-          <h3>Ekonomi challenge</h3>
-          <p>
-            Floor solve-time memodelkan worker 50rb H/s; worker
-            <code>crypto.subtle</code> terukur ~400rb H/s, sehingga klien
-            jujur ditandai implausible — dan klien mana pun bisa sekadar
-            menunda verifikasi melewati floor. Floor kini kuantil rendah
-            dari waktu solve jujur (<code>2^d / (2M × 32)</code>,
-            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>):
-            false positive ≤ ~6% kasus terburuk, jawaban kelas GPU
-            memicunya ~96%. Threat model menyatakan bahwa floor berbasis
-            jam dinding tidak bisa menangkap klien yang menunda verifikasi
-            — itu tugas lapisan behavioral (M2).
-          </p>
-
-          <h3>Token dan konfigurasi</h3>
-          <p>
-            Invarian terdokumentasi bahwa token tidak pernah hidup lebih
-            lama dari challenge-nya tidak ditegakkan — token 1 jam
-            diterbitkan dari challenge 5 detik. <code>TokenTTL</code> kini
-            di-clamp ke <code>ChallengeTTL</code>. Tuning jahat
-            (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) membocorkan skor
-            risiko 500 ke token ter-tanda-tangan; skor di-clamp ke 0–100
-            dan penalty di atas 100 menolak startup.
-            <code>MYTHIC_BASE_DIFFICULTY</code> negatif menerbitkan
-            challenge yang dipenuhi nonce apa pun; konfigurasi divalidasi
-            saat startup dan nilai di luar rentang menolak melayani.
-            Temuan dari mutation suite: decoder base64 Go diam-diam
-            membuang low bits yang tak terpakai dari karakter trailing,
-            sehingga string token yang berbeda bisa ter-decode ke bytes
-            yang sama dan lolos verifikasi — merusak identitas token di
-            level string. <code>VerifyToken</code> kini menegakkan base64
-            kanonis: re-encoding bytes hasil decode harus sama persis
-            dengan input, atau token ditolak.
-          </p>
-
-          <h3>Penanganan state</h3>
-          <p>
-            Dua proses yang berbagi satu keystore bisa bertabrakan di file
-            temp yang sama atau split-brain kunci penandatanganan tanpa
-            suara; nama temp kini unik per proses dan save menolak
-            menimpa file yang berubah sejak dimuat. Byte sisa setelah nilai
-            JSON dulu diabaikan diam-diam; kini ditolak. Counter
-            sliding-window menyimpan satu entri per hit — termasuk yang
-            sudah di-rate-limit — sehingga sejuta hit dari satu identitas
-            biayanya ~16,4 MB heap dan 595 detik CPU. Counter kini
-            saturasi di <code>IPLimit+1</code>: flood yang sama biayanya
-            +0,00 MB dan 714 ms.
-          </p>
-
+          <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th style="width:22%">Area</th><th style="width:39%">Penyebab</th><th>Perbaikan</th></tr>
+            </thead>
+            <tbody>
+              <tr class="group"><td colspan="3">Transport & limit</td></tr>
+              <tr>
+                <td>Budget rate-limit</td>
+                <td>Budget dikonsumsi <em>setelah</em> validasi — flood invalid-JSON dan site key tak dikenal berjalan tanpa throttling (600 request di 225 req/s, nol 429).</td>
+                <td>Budget kini dihitung <em>sebelum</em> validasi.</td>
+              </tr>
+              <tr>
+                <td>Kunci tekanan IPv6</td>
+                <td>Limiter mengunci IPv6 di /128 — satu /64 mengendalikan 2⁶⁴ identitas (5.000 request dari satu blok, nol tersentuh).</td>
+                <td>Counter kini mengagregasi IPv6 ke /64 (ADR-0007).</td>
+              </tr>
+              <tr>
+                <td>Timeout koneksi</td>
+                <td>Tidak ada timeout body/read/idle — klien lambat menahan koneksi tanpa batas.</td>
+                <td><code>ReadTimeout</code>, <code>WriteTimeout</code>, dan <code>IdleTimeout</code> kini diset.</td>
+              </tr>
+              <tr class="group"><td colspan="3">Ekonomi challenge</td></tr>
+              <tr>
+                <td>Floor solve-time</td>
+                <td>Floor memodelkan worker 50rb H/s; worker <code>crypto.subtle</code> terukur ~400rb H/s — klien jujur ditandai implausible.</td>
+                <td>Floor kini kuantil rendah dari waktu solve jujur (<code>2^d / (2M × 32)</code>): false positive ≤ ~6% kasus terburuk, jawaban kelas GPU memicunya ~96% (ADR-0008).</td>
+              </tr>
+              <tr>
+                <td>Verifikasi tertunda</td>
+                <td>Klien mana pun bisa sekadar menunda verifikasi melewati floor berbasis jam dinding — floor tak bisa menangkap kesabaran.</td>
+                <td>Didokumentasikan di threat model sebagai tugas lapisan behavioral (M2), bukan floor.</td>
+              </tr>
+              <tr class="group"><td colspan="3">Token & konfigurasi</td></tr>
+              <tr>
+                <td>TTL token</td>
+                <td>Invarian &ldquo;token tak pernah hidup lebih lama dari challenge-nya&rdquo; tak ditegakkan — token 1 jam diterbitkan dari challenge 5 detik.</td>
+                <td><code>TokenTTL</code> kini di-clamp ke <code>ChallengeTTL</code>.</td>
+              </tr>
+              <tr>
+                <td>Clamp skor</td>
+                <td>Tuning jahat (<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>) membocorkan skor risiko 500 ke token ter-tanda-tangan.</td>
+                <td>Skor di-clamp ke 0–100 di batas engine; penalty di atas 100 menolak startup.</td>
+              </tr>
+              <tr>
+                <td>Validasi konfigurasi</td>
+                <td><code>MYTHIC_BASE_DIFFICULTY</code> negatif menerbitkan challenge yang dipenuhi nonce apa pun.</td>
+                <td>Konfigurasi divalidasi saat startup; nilai di luar rentang menolak melayani.</td>
+              </tr>
+              <tr>
+                <td>Bentuk kanonis base64</td>
+                <td>Decoder base64 Go diam-diam membuang low bits tak terpakai dari karakter trailing, sehingga string token berbeda ter-decode ke bytes yang sama dan lolos verifikasi — merusak identitas token di level string. Ketahuan oleh mutation suite tamper-resistance di run pertamanya.</td>
+                <td><code>VerifyToken</code> menegakkan base64 kanonis: re-encoding bytes hasil decode harus sama persis dengan input, atau token ditolak.</td>
+              </tr>
+              <tr class="group"><td colspan="3">Penanganan state</td></tr>
+              <tr>
+                <td>Konkurensi keystore</td>
+                <td>Dua proses berbagi satu keystore bertabrakan di file temp yang sama atau split-brain kunci signing tanpa suara.</td>
+                <td>Nama temp unik per proses; save menolak menimpa file yang berubah sejak dimuat.</td>
+              </tr>
+              <tr>
+                <td>Byte sisa JSON</td>
+                <td>Byte sisa setelah nilai JSON diabaikan diam-diam.</td>
+                <td>Byte sisa kini ditolak.</td>
+              </tr>
+              <tr>
+                <td>Saturasi counter</td>
+                <td>Counter sliding-window menyimpan satu entri per hit — termasuk yang ter-rate-limit. Sejuta hit dari satu identitas biayanya ~16,4 MB heap dan 595 dtk CPU.</td>
+                <td>Counter saturasi di <code>IPLimit+1</code>: flood yang sama biayanya +0,00 MB dan 714 ms.</td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
           <h2>Verifikasi</h2>
           <p>
             Setiap temuan punya reproduksi; setiap fix punya regression test

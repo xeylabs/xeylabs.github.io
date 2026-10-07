@@ -91,61 +91,81 @@
 
           <h2>加固：十二项发现</h2>
           <p>
-            对抗性测试 —— 对真实服务器的黑盒测试，辅以白盒确认 —— 产出了
-            十二项发现。主要的按领域分组：
+            每行：攻击揭示了什么，然后改了什么。每项修复都有回归测试；每项修复都用原始复现重新验证过。
           </p>
-
-          <h3>传输与限流</h3>
-          <p>
-            限流预算此前只在校验之后消耗：无效 JSON 与未知站点密钥的洪流
-            完全不受限（225 req/s 下 600 个请求，零 429）。预算现在在
-            校验之前计数。限流器按 /128 键控 IPv6 —— 单个 /64 拥有 2⁶⁴ 个
-            身份（从一个块发出 5,000 个请求，零命中）；计数器现在把 IPv6
-            聚合到 /64
-            （<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>）。
-            此前没有主体/读/空闲超时；慢客户端可以无限期占住连接。现已设置
-            <code>ReadTimeout</code>、<code>WriteTimeout</code> 与
-            <code>IdleTimeout</code>。
-          </p>
-
-          <h3>挑战经济学</h3>
-          <p>
-            解题时间下限按 5 万 H/s 的 worker 建模；实测
-            <code>crypto.subtle</code> worker 约 40 万 H/s，诚实客户端被
-            标记为不合理 —— 而任何客户端都可以简单地把验证推迟过下限。下限
-            现在是诚实解题时间的低分位
-            （<code>2^d / (2M × 32)</code>，
-            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>）：
-            误报最坏 ≤ ~6%，GPU 级答案约 96% 触发。威胁模型明确写道：墙上
-            时钟下限抓不到推迟验证的客户端 —— 那是行为层（M2）的工作。
-          </p>
-
-          <h3>令牌与配置</h3>
-          <p>
-            令牌活得不会比挑战更久这条文档化的不变式此前未被强制 —— 从 5 秒
-            挑战签发了 1 小时令牌。<code>TokenTTL</code> 现在钳制到
-            <code>ChallengeTTL</code>。恶意调参
-            （<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>）把 500 的风险分值
-            泄漏进签名令牌；分值钳制到 0–100，超过 100 的惩罚拒绝启动。负的
-            <code>MYTHIC_BASE_DIFFICULTY</code> 会发出任意 nonce 都能满足的
-            挑战；配置在启动时校验，越界值拒绝服务。变异测试套件在首次
-            运行中还抓到一项发现：Go 的 base64 解码器会静默丢弃尾字符中
-            未使用的低位比特，导致不同的令牌字符串解码出相同的字节并通过
-            验证 —— 破坏了字符串层面的令牌身份。<code>VerifyToken</code>
-            现在强制规范 base64：解码后重新编码必须与输入完全一致，否则
-            拒绝令牌。
-          </p>
-
-          <h3>状态处理</h3>
-          <p>
-            共享同一密钥库的两个进程会在同一临时文件上冲突，或无声地脑裂签名
-            密钥；临时名改为进程唯一，保存拒绝覆盖加载之后被改动的文件。
-            JSON 值之后的尾部字节曾被默默忽略；现在被拒绝。滑动窗口计数器
-            每次命中存一条记录 —— 包括被限流的 —— 因此来自单一身份的一百万次
-            命中耗费约 16.4 MB 堆内存与 595 秒 CPU。计数器现在在
-            <code>IPLimit+1</code> 饱和：同样的洪流耗费 +0.00 MB 与 714 毫秒。
-          </p>
-
+          <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th style="width:22%">领域</th><th style="width:39%">原因</th><th>修复</th></tr>
+            </thead>
+            <tbody>
+              <tr class="group"><td colspan="3">传输与限流</td></tr>
+              <tr>
+                <td>限流预算</td>
+                <td>预算在验证<em>之后</em>才消耗 —— 非法 JSON 和未知 site key 的洪水未被限流（600 请求，225 req/s，零 429）。</td>
+                <td>预算现在在验证<em>之前</em>计数。</td>
+              </tr>
+              <tr>
+                <td>IPv6 压力键</td>
+                <td>限流器按 /128 键控 IPv6 —— 一个 /64 控制了 2⁶⁴ 个身份（单个网段 5,000 请求，零命中）。</td>
+                <td>计数器按 /64 聚合 IPv6（ADR-0007）。</td>
+              </tr>
+              <tr>
+                <td>连接超时</td>
+                <td>没有 body/read/idle 超时 —— 慢客户端无限期占用连接。</td>
+                <td>已设置 <code>ReadTimeout</code>、<code>WriteTimeout</code>、<code>IdleTimeout</code>。</td>
+              </tr>
+              <tr class="group"><td colspan="3">挑战经济学</td></tr>
+              <tr>
+                <td>求解时间下限</td>
+                <td>下限按 50k H/s 的 worker 建模；实测 <code>crypto.subtle</code> worker 约 400k H/s —— 诚实客户端被误判。</td>
+                <td>下限现为诚实求解时间的低分位数（<code>2^d / (2M × 32)</code>）：最坏情况误报 ≤ ~6%，GPU 级答案约 96% 触发（ADR-0008）。</td>
+              </tr>
+              <tr>
+                <td>延迟验证</td>
+                <td>客户端只需推迟验证越过时钟下限 —— 下限抓不住耐心。</td>
+                <td>已在威胁模型中记为行为层（M2）的职责，而非下限的。</td>
+              </tr>
+              <tr class="group"><td colspan="3">令牌与配置</td></tr>
+              <tr>
+                <td>令牌 TTL</td>
+                <td>&ldquo;令牌活得不会比挑战更久&rdquo;这条文档化的不变式此前未被强制 —— 从 5 秒挑战签发了 1 小时令牌。</td>
+                <td><code>TokenTTL</code> 现在钳制到 <code>ChallengeTTL</code>。</td>
+              </tr>
+              <tr>
+                <td>分值钳制</td>
+                <td>恶意调参（<code>MYTHIC_FAST_SOLVE_PENALTY=500</code>）把 500 的风险分值泄漏进签名令牌。</td>
+                <td>分值在引擎边界钳制到 0–100；超过 100 的惩罚拒绝启动。</td>
+              </tr>
+              <tr>
+                <td>配置校验</td>
+                <td>负的 <code>MYTHIC_BASE_DIFFICULTY</code> 会发出任意 nonce 都能满足的挑战。</td>
+                <td>配置在启动时校验，越界值拒绝服务。</td>
+              </tr>
+              <tr>
+                <td>Base64 规范形式</td>
+                <td>Go 的 base64 解码器会静默丢弃尾字符中未使用的低位比特，导致不同的令牌字符串解码出相同的字节并通过验证 —— 破坏了字符串层面的令牌身份。篡改抵抗变异套件在首次运行中抓到。</td>
+                <td><code>VerifyToken</code> 强制规范 base64：解码后重新编码必须与输入完全一致，否则拒绝令牌。</td>
+              </tr>
+              <tr class="group"><td colspan="3">状态处理</td></tr>
+              <tr>
+                <td>密钥库并发</td>
+                <td>共享同一密钥库的两个进程在同一临时文件上冲突，或静默分裂签名密钥。</td>
+                <td>临时文件名按进程唯一；保存拒绝覆盖自加载后被修改的文件。</td>
+              </tr>
+              <tr>
+                <td>JSON 尾部字节</td>
+                <td>JSON 值之后的尾部字节被静默忽略。</td>
+                <td>尾部字节现在被拒绝。</td>
+              </tr>
+              <tr>
+                <td>计数器饱和</td>
+                <td>滑动窗口计数器每个命中存一条 —— 包括被限流的。来自同一身份的一百万次命中花费约 16.4 MB 堆内存和 595 秒 CPU。</td>
+                <td>计数器在 <code>IPLimit+1</code> 处饱和：同样的洪水只花 +0.00 MB 和 714 ms。</td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
           <h2>验证</h2>
           <p>
             每项发现都有复现步骤；每个修复都有回归测试
