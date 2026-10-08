@@ -18,6 +18,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .fig { margin: 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+    .flow-note { padding: 1rem 0.75rem 0; color: var(--mut); max-width: 44rem; }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -47,6 +53,47 @@
         <p class="log-sub">
           <strong>Mythic</strong>는 적응형 봇 완화 —— 하나의 규칙 위에 세워진 캡차 대체품: <strong>클라이언트를 절대 신뢰하지 마라</strong>. 적응형 작업증명, 결정론적 리스크 엔진, Ed25519 서명 판정. <a href="https://github.com/xeylabs/mythic" rel="noopener">저장소 ↗</a> · AGPL-3.0 · SDK 포함.
         </p>
+      </section>
+
+            <section class="section" aria-label="Mythic 작동 방식">
+        <div class="sec-head">
+          <span class="idx">FLOW</span>
+          <h2>작동 방식</h2>
+          <span class="mono">여섯 단계, 신뢰 없음</span>
+        </div>
+        <div class="fig" role="img" aria-label="요청 수명 주기: 클라이언트가 챌린지를 요청하고, 작업 증명을 풀고, 서버가 검증하고, 서명된 토큰을 발급하고, 오리진이 토큰을 로컬에서 검증한다.">
+          <svg viewBox="0 0 1180 170" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+            <g font-size="12" text-anchor="middle">
+              <rect x="10" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="85" y="80" fill="#101210">1 · 클라이언트</text>
+              <text x="85" y="98" font-size="10" fill="#55584F">요청</text>
+              <rect x="210" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="285" y="80" fill="#101210">2 · 챌린지</text>
+              <text x="285" y="98" font-size="10" fill="#55584F">난이도는 리스크가 결정</text>
+              <rect x="410" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="485" y="80" fill="#101210">3 · PoW 풀이</text>
+              <text x="485" y="98" font-size="10" fill="#55584F">웹 워커에서</text>
+              <rect x="610" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="685" y="80" fill="#101210">4 · 검증</text>
+              <text x="685" y="98" font-size="10" fill="#55584F">항상 서버 측에서</text>
+              <rect x="810" y="55" width="150" height="60" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+              <text x="885" y="80" fill="#101210">5 · 서명된 토큰</text>
+              <text x="885" y="98" font-size="10" fill="#101210">Ed25519, 짧은 수명</text>
+              <rect x="1010" y="55" width="160" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="1090" y="80" fill="#101210">6 · 오리진 검증</text>
+              <text x="1090" y="98" font-size="10" fill="#55584F">로컬, 콜백 없음</text>
+            </g>
+            <g stroke="#101210" stroke-width="1.5">
+              <line x1="160" y1="85" x2="210" y2="85"/><polygon points="210,85 200,79 200,91" fill="#101210"/>
+              <line x1="360" y1="85" x2="410" y2="85"/><polygon points="410,85 400,79 400,91" fill="#101210"/>
+              <line x1="560" y1="85" x2="610" y2="85"/><polygon points="610,85 600,79 600,91" fill="#101210"/>
+              <line x1="760" y1="85" x2="810" y2="85"/><polygon points="810,85 800,79 800,91" fill="#101210"/>
+              <line x1="960" y1="85" x2="1010" y2="85"/><polygon points="1010,85 1000,79 1000,91" fill="#101210"/>
+            </g>
+          </svg>
+          <p class="figcap mono">그림 1 — 클라이언트는 센서이지 심판이 아니다. 모든 결정은 서버 측에서 내려지고 서명된다.</p>
+        </div>
+        <p class="flow-note mono">전체 메커니즘, 트레이드오프, 명시된 한계는 아래 빌드 로그에.</p>
       </section>
 
       <section class="section" aria-label="Mythic build log">

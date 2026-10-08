@@ -18,6 +18,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .fig { margin: 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+    .flow-note { padding: 1rem 0.75rem 0; color: var(--mut); max-width: 44rem; }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -47,6 +53,47 @@
         <p class="log-sub">
           <strong>Mythic</strong> は適応型ボット対策 —— 一つのルールの上に築かれたキャプチャの代替：<strong>クライアントを信頼しない</strong>。適応型プルーフオブワーク、決定論的リスクエンジン、Ed25519署名の判定。<a href="https://github.com/xeylabs/mythic" rel="noopener">リポジトリ ↗</a> · AGPL-3.0 · SDK同梱。
         </p>
+      </section>
+
+            <section class="section" aria-label="Mythicの仕組み">
+        <div class="sec-head">
+          <span class="idx">FLOW</span>
+          <h2>仕組み</h2>
+          <span class="mono">6ステップ、信頼なし</span>
+        </div>
+        <div class="fig" role="img" aria-label="リクエストのライフサイクル：クライアントがチャレンジを要求し、プルーフ・オブ・ワークを解き、サーバーが検証し、署名済みトークンを発行し、オリジンがトークンをローカルで検証する。">
+          <svg viewBox="0 0 1180 170" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+            <g font-size="12" text-anchor="middle">
+              <rect x="10" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="85" y="80" fill="#101210">1 · クライアント</text>
+              <text x="85" y="98" font-size="10" fill="#55584F">リクエスト</text>
+              <rect x="210" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="285" y="80" fill="#101210">2 · チャレンジ</text>
+              <text x="285" y="98" font-size="10" fill="#55584F">難易度はリスクで決定</text>
+              <rect x="410" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="485" y="80" fill="#101210">3 · PoWソルブ</text>
+              <text x="485" y="98" font-size="10" fill="#55584F">Webワーカーで</text>
+              <rect x="610" y="55" width="150" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="685" y="80" fill="#101210">4 · 検証</text>
+              <text x="685" y="98" font-size="10" fill="#55584F">常にサーバー側で</text>
+              <rect x="810" y="55" width="150" height="60" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+              <text x="885" y="80" fill="#101210">5 · 署名済みトークン</text>
+              <text x="885" y="98" font-size="10" fill="#101210">Ed25519、短寿命</text>
+              <rect x="1010" y="55" width="160" height="60" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+              <text x="1090" y="80" fill="#101210">6 · オリジンが検証</text>
+              <text x="1090" y="98" font-size="10" fill="#55584F">ローカル、コールバックなし</text>
+            </g>
+            <g stroke="#101210" stroke-width="1.5">
+              <line x1="160" y1="85" x2="210" y2="85"/><polygon points="210,85 200,79 200,91" fill="#101210"/>
+              <line x1="360" y1="85" x2="410" y2="85"/><polygon points="410,85 400,79 400,91" fill="#101210"/>
+              <line x1="560" y1="85" x2="610" y2="85"/><polygon points="610,85 600,79 600,91" fill="#101210"/>
+              <line x1="760" y1="85" x2="810" y2="85"/><polygon points="810,85 800,79 800,91" fill="#101210"/>
+              <line x1="960" y1="85" x2="1010" y2="85"/><polygon points="1010,85 1000,79 1000,91" fill="#101210"/>
+            </g>
+          </svg>
+          <p class="figcap mono">図1 — クライアントはセンサーであり、審判ではない。すべての決定はサーバー側で下され署名される。</p>
+        </div>
+        <p class="flow-note mono">完全なメカニズム、トレードオフ、明示された制限は下のビルドログに。</p>
       </section>
 
       <section class="section" aria-label="Mythic build log">
