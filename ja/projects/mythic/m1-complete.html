@@ -19,6 +19,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">コンテンツへスキップ</a>
@@ -52,67 +63,252 @@
         <h1>M1 完了: ネットワークシグナル、Worker ソルバー、オリジン SDK。</h1>
         <div class="post-body">
           <p>
-            M1 is done. Four items closed in
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
-            JA4 TLS fingerprinting, ASN-based network scoring, a packaged Web
-            Worker for proof-of-work, and origin verification helpers for
-            Node.js and Python. Commits
-            <code>bc87ed9</code> through <code>c7e4fc3</code>.
+            M1は、「適応的」が
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            のREADMEの形容詞であることをやめ、メカニズムになったマイルストーンだ。
+            これまでサーバーはプルーフオブワークの難易度という1つの道具だけで
+            悪用に価格を付けていた。M1は、誰が要求しているかに価格を付けられる
+            シグナルを加える：JA4 TLSフィンガープリントとASNレピュテーションが
+            上限付きリスクエンジンに入力され、PoWソルバーがメインスレッドから
+            外れ、オリジンはNode.jsとPythonで判定をネイティブ検証できる。
+            コミット <code>bc87ed9</code> から <code>c7e4fc3</code>。
+          </p>
+          <p>
+            <mark>本記事は、元の「M1完了」宣言に7つの穴があることが内部監査で
+            見つかったため、改訂された。</mark>6件はコミット
+            <code>067e9f7</code> で修正済み；1件は正直に未解決のままで、以下に
+            記載する。修正はここに文書化されており、埋もれさせない。
           </p>
 
-          <h2>JA4 フィンガープリント (ADR-0010)</h2>
+          <h2>なぜシグナルか —— そしてなぜ参考扱いなのか</h2>
           <p>
-            TLS client fingerprints distinguish real browsers from scripted
-            HTTP clients. The server reads <code>X-Mythic-JA4</code> (set by
-            a trusted proxy that terminates TLS) and scores the fingerprint
-            against known-browser patterns. Malformed or prefix-only values
-            are rejected from receiving the known-browser discount — a
-            parroted fingerprint remains a documented bypass, so JA4 is
-            advisory only, capped at a small risk contribution.
+            ボット対策はシグナルで生き死にし、単独のシグナルはどれも弱い。
+            JA4フィンガープリントは、手間を惜しまないクライアントなら誰でも
+            バイト単位で真似できる。ASNはヒューリスティック —— 今日は
+            データセンター、明日は住宅プロキシだ。どちらかを絶対真理として
+            扱えば、手の込んだブロックリストを作ったことになる。
+          </p>
+          <p>
+            だからM1では、すべてのネットワークシグナルを<strong>参考情報
+            （advisory）</strong>として扱う：小さく、厳密に上限のある寄与で、
+            リクエストの価格を引き上げはできるが、単独で無罪にも有罪にも
+            できない。フローはこうなる：
           </p>
 
-          <h2>ASN スコアリング (ADR-0010)</h2>
+          <div class="fig" role="img" aria-label="リスクシグナルフロー：JA4、ASN、行動シグナルが risk.Input に入り、上限付きスコアリングが 0〜100 のスコアを生成し、許可・チャレンジ・ブロックにマップされる。">
+            <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">リスクシグナルフロー</text>
+              <g font-size="12" text-anchor="middle">
+                <rect x="20" y="60" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="86" fill="#101210">JA4フィンガープリント</text>
+                <text x="110" y="104" font-size="10" fill="#55584F">プロキシ設定ヘッダー</text>
+                <rect x="20" y="140" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="166" fill="#101210">ASN</text>
+                <text x="110" y="184" font-size="10" fill="#55584F">MaxMindルックアップ</text>
+                <rect x="20" y="220" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="246" fill="#101210">行動</text>
+                <text x="110" y="264" font-size="10" fill="#55584F">バイオメトリクス</text>
+              </g>
+              <g stroke="#101210" stroke-width="1.5">
+                <line x1="200" y1="92" x2="300" y2="140"/><polygon points="300,140 290,134 290,146" fill="#101210"/>
+                <line x1="200" y1="172" x2="300" y2="160"/><polygon points="300,160 290,154 290,166" fill="#101210"/>
+                <line x1="200" y1="252" x2="300" y2="180"/><polygon points="300,180 290,174 290,186" fill="#101210"/>
+              </g>
+              <g font-size="12" text-anchor="middle">
+                <rect x="300" y="120" width="170" height="80" fill="#101210"/>
+                <text x="385" y="152" fill="#F4F3EE">risk.Input</text>
+                <text x="385" y="172" font-size="10" fill="#C6F531">チャレンジ + 検証</text>
+              </g>
+              <line x1="470" y1="160" x2="550" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="550,160 540,154 540,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="550" y="120" width="170" height="80" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="635" y="146" fill="#101210">上限付きスコアリング</text>
+                <text x="635" y="166" font-size="11" fill="#55584F">スコア ∈ [0, 100]</text>
+                <text x="635" y="184" font-size="10" fill="#55584F">上限は検証済み</text>
+              </g>
+              <line x1="720" y1="160" x2="790" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="790,160 780,154 780,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="790" y="80" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="109" fill="#101210">許可</text>
+                <rect x="790" y="136" width="150" height="48" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="165" fill="#101210">チャレンジ</text>
+                <rect x="790" y="192" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="221" fill="#101210">ブロック</text>
+              </g>
+            </svg>
+            <p class="figcap mono">図1 —— すべてのシグナルは参考扱いで上限付き。単独のシグナルがリクエストを無罪にも有罪にもできない。</p>
+          </div>
+
+          <h2>JA4フィンガープリント：割引は上限付き、信頼はしない</h2>
           <p>
-            Autonomous System Numbers add a network-level signal: datacenter
-            and hosting ASNs score higher than residential ISPs. A new
-            <code>ASNLookup</code> component resolves client IPs via a
-            MaxMind GeoLite2-ASN database (<code>MYTHIC_ASN_DB</code>).
-            Empty path means the signal is disabled — valid. A configured
-            path that fails to open refuses startup: fail-closed on
-            misconfiguration, not silent degradation.
+            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0010-ja4-asn-signals.md" rel="noopener">ADR-0010</a>。
+            サーバーはJA4フィンガープリントを
+            <code>X-Mythic-JA4</code> から読む。これは終端プロキシが設定する ——
+            クライアントから直接は読まない。クライアントが提供する値は攻撃者が
+            制御できるからだ。フィンガープリントは既知ブラウザのJA4パターンと
+            照合され、一致すれば小さなリスク割引が適用される。割引には上限が
+            あり、単独でチャレンジを解除できない。形式が壊れた値やプレフィックス
+            のみの一致は、割引パスから完全に除外される
+            (<code>a8ce95a</code>)。すべての上限は起動時に検証され、敵対的な
+            チューニング値はサーブを拒否する (<code>8f560bd</code>)。
+          </p>
+          <p>
+            明示した制限：JA4は参考情報だ。実在ブラウザのフィンガープリントを
+            バイト単位で真似するクライアントは、このレイヤーでは区別できない。
+            割引が小さいのは、まさにこのシグナルが偽装可能だからだ —— 素朴な
+            スクリプティングのコストを引き上げるだけで、それ以上ではない。
           </p>
 
-          <h2>PoW ソルビング用 Web Worker</h2>
+          <h2>ASNスコアリング：失敗時は閉じるヒューリスティック</h2>
           <p>
-            The proof-of-work grind ran on the main thread, freezing the
-            page at high difficulty. <code>solveInWorker()</code> packages
-            the solver as a Web Worker via Blob URL — no separate worker
-            file to host, works with any bundler. It falls back to
-            main-thread solving when Workers are unavailable (SSR, Node).
-            <code>MythicClient</code> uses the worker by default and
-            auto-starts behavioral collection on construction.
+            同じADR。クライアントIPはMaxMind GeoLite2-ASNデータベース
+            (<code>MYTHIC_ASN_DB</code>) 経由で自律システム番号（ASN）に解決される。
+            データセンター、ホスティング、VPN出口のASNはリスクに寄与し、住宅ISPの
+            ASNは寄与しない。ルックアップは全体でnilセーフ：空の
+            <code>MYTHIC_ASN_DB</code> はシグナルをクリーンに無効化し、設定された
+            パスが開けない場合は起動時に致命的エラーになる。設定ミスは閉じる
+            方向に失敗し、未設定は設計上静かに劣化する —— 運用者が有効化しない
+            ことを選んだのだから。
+          </p>
+          <p>
+            <mark>監査による修正：</mark>元のテストは失敗モード（nil、空パス、
+            不正パス、無効IP）しかカバーしておらず、肯定的なルックアップは一度も
+            実行されていなかった。<code>067e9f7</code> はリポジトリ内で生成した
+            合成 <code>.mmdb</code> フィクスチャ（ライセンス付きMaxMindデータでは
+            ない）に対する <code>TestASNLookupPositive</code> を追加し、正常系を
+            固定した：データセンター範囲はスコアし、住宅範囲はスコアしない。
           </p>
 
-          <h2>オリジン検証ヘルパー</h2>
+          <h2>Web Workerソルバー：PoWをメインスレッドから外す</h2>
           <p>
-            Decision tokens were only verifiable in Go. Origins running
-            Node.js or Python can now verify tokens locally with new
-            helpers: <code>parsePublicKey</code>/<code>verifyToken</code>
-            for Node, <code>parse_public_key</code>/<code>verify_token</code>
-            for Python. Both enforce Ed25519 signatures, expiry, and
-            canonical base64url encoding. Cross-language verified: a token
-            generated by the Go server verifies in both.
+            SHA-256の演算は以前メインスレッドで動いていて、難易度24以上では
+            ページが数秒固まった。SDKは <code>solveInWorker()</code> を出荷する。
+            これは自己完結型のソルバーをBlob URLに文字列化してスレッド外で実行
+            する。デプロイするWorkerファイルも、バンドラープラグインも不要。
+            進捗コールバックは2048イテレーションごとに発火し、
+            <code>AbortSignal</code> はWorkerを停止してURLを解放する：
+          </p>
+          <pre><code>export async function solveInWorker(
+  challenge: Challenge,
+  opts: SolveInWorkerOptions = {},
+): Promise&lt;Solution&gt; {
+  // No Worker API (Node, SSR) → fall back to main thread.
+  if (typeof Worker === "undefined") {
+    const { solve } = await import("./pow");
+    return solve(challenge, opts);
+  }
+  const workerCode = `(${workerMain.toString()})()`;
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  // …postMessage challenge, await solution, revoke URL
+}</code></pre>
+          <p>
+            <code>MythicClient</code> は <code>useWorker</code>（既定
+            <code>true</code>）を取り、構築時に行動コレクターを自動開始する。
+            クライアントは1つ、フローは1つ、手動の配線は不要。
+          </p>
+          <p>
+            <mark>正直に明示する既知の穴：</mark>WorkerパスはBunのWorker実装でしか
+            動いたことがなく、Chromium・Firefox・Safariでは一度も実行されていない。
+            これは <code>sdk/js/README.md</code> に文書化されており、そうでない
+            とは主張していない。Playwrightスイートを試みたが、ビルド環境が
+            ブラウザバイナリを取得できなかった。それが変わるまで、実ブラウザの
+            挙動は未テストであり、主張もしない。
           </p>
 
-          <h2>検証</h2>
+          <h2>オリジン検証：Node.jsとPython</h2>
           <p>
-            <code>go vet</code> clean, <code>go test ./... -race</code>
-            green, SDK <code>tsc --noEmit</code> and <code>bun test</code>
-            green (15 tests), Python <code>pytest</code> green (6 tests).
-            Every new signal documents its bypass first, per the project's
-            rule. What remains: M2 (behavioral biometrics, closing the
-            delay-attack gap) and M5 (shared keystore for multi-node
-            verification).
+            決定トークンはGo (<code>server/xtoken</code>) でしか検証できなかった。
+            オリジンはネイティブヘルパーを得た。
+            <code>sdk/js/src/verify.ts</code> ——
+            <code>parsePublicKey(x)</code> はJWKSの生鍵をDER SPKIでラップし、
+            <code>verifyToken(pub, token)</code> は生ペイロードバイトに対する
+            Ed25519署名を検証し（事前ハッシュなし）、正準base64url再エンコードを
+            強制し、期限切れトークンを拒否する：
+          </p>
+          <pre><code>// Canonical encodings only: re-encoding the decoded bytes
+// must reproduce the input exactly. Go's base64 decoder
+// silently discards unused low bits of a trailing character,
+// so distinct strings can decode to the same token.
+if base64.RawURLEncoding.EncodeToString(payload) != payloadPart ||
+    base64.RawURLEncoding.EncodeToString(sig) != sigPart {
+    return nil, fmt.Errorf("%w: non-canonical encoding", ErrInvalidToken)
+}</code></pre>
+          <p>
+            <code>sdk/python/mythic/verify.py</code> ——
+            <code>cryptography</code> パッケージ経由で同じセマンティクス：
+            <code>parse_public_key</code>、<code>verify_token</code>、
+            <code>TokenClaims</code> データクラス、あらゆる拒否で
+            <code>TokenError</code>。Python SDKは現在CI
+            (<code>.github/workflows/sdk-python-ci.yml</code>) に入り、
+            <code>make test</code> のもとで実行される —— 以前は何も自動実行
+            していなかった。
+          </p>
+          <p>
+            言語をまたいで検証され、コミット済み：
+            <code>e2e/crosslang.sh</code> はライブGoサーバーからトークンを発行し、
+            Go・Python・JSで同一に検証する（3言語とも
+            <code>dec=allow risk=6</code>）。
+          </p>
+
+          <h2>エビデンス</h2>
+          <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>スイート</th><th>結果</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>go build ./...</code> · <code>go vet ./...</code></td><td>クリーン</td></tr>
+              <tr><td><code>go test -race -count=1</code></td><td>7/7 パッケージ、データレース 0</td></tr>
+              <tr><td><code>bun test</code> (JS SDK)</td><td>17/17</td></tr>
+              <tr><td><code>tsc --noEmit</code> · <code>bun run build</code></td><td>クリーン</td></tr>
+              <tr><td><code>pytest</code> (Python SDK)</td><td>6/6</td></tr>
+              <tr><td><code>e2e/crosslang.sh</code></td><td>Go・Python・JS がライブトークンで一致</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            スコアリング契約自体はコードに固定されている —— 敵対的チューニング
+            でも範囲外のスコアを署名トークンに漏らさない（レッドチーム発見H3、
+            回帰テスト済み）：
+          </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+// dashboards, tuning docs). Hostile tuning must clamp
+// here, not leak 500 into tokens (red-team H3).
+if score > 100 {
+    score = 100
+}
+if score &lt; 0 {
+    score = 0
+}</code></pre>
+
+          <h2>監査が変えたもの</h2>
+          <p>
+            元の「M1完了」宣言の後、ゼロからの監査（フレッシュクローン、全スイート
+            再実行、検証パスへの敵対的パス）が7つの穴を見つけた。コミット
+            <code>067e9f7</code>（"fix(audit): close all 7 M1 audit gaps"）が
+            そのうち6つを閉じた：
+          </p>
+          <ul>
+            <li>ASNの肯定的テストを追加（失敗モードのみだった）。</li>
+            <li>行動ヒントは現在 <code>verify()</code> で送信される —— 以前はコレクターがチャレンジ後に停止し、サーバー側のverify段階の行動解析が実質的にデッドコードになっていた。</li>
+            <li>Python SDKをCIと <code>make test</code> に追加。</li>
+            <li>言語横断E2Eをコミット (<code>e2e/crosslang.sh</code>)。</li>
+            <li><code>docs/ROADMAP.md</code> を修正 —— 完了済みM1項目が未計画のままだった。</li>
+            <li>誤解を招くWorkerテスト名を修正（フォールバックをテストすると主張しながら実際は本物のWorkerパスをテストしていた）。</li>
+          </ul>
+          <p>
+            7つ目 —— Web Workerの実ブラウザテスト —— は未解決のまま、完了と
+            主張せず既知の穴として文書化されている。それが現在のM1の正直な状態だ。
+          </p>
+
+          <h2>未解決の問い</h2>
+          <p>
+            実ブラウザでのWorkerカバレッジが上記で述べた1件の未解決項目だ。それ以外
+            では：IPレピュテーションフィードは依然計画中（ROADMAP、正直に記載）、
+            M2の行動バイオメトリクスとM5のクロスノード検証用共有キーストアが次の
+            マイルストーンとして残る。プロジェクトルールとして、すべての新しい
+            シグナルは出荷前にバイパスを文書化する —— ADR-0010の「Bypasses」節を参照。
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

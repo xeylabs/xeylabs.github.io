@@ -19,6 +19,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">콘텐츠로 건너뛰기</a>
@@ -52,67 +63,258 @@
         <h1>M1 완료: 네트워크 시그널, Worker 솔버, 오리진 SDK.</h1>
         <div class="post-body">
           <p>
-            M1 is done. Four items closed in
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
-            JA4 TLS fingerprinting, ASN-based network scoring, a packaged Web
-            Worker for proof-of-work, and origin verification helpers for
-            Node.js and Python. Commits
-            <code>bc87ed9</code> through <code>c7e4fc3</code>.
+            M1은 “적응형”이
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>의
+            README에 적힌 형용사에서 메커니즘이 된 마일스톤입니다. 지금까지
+            서버는 하나의 수단으로 남용에 가격을 매겼습니다 —— 작업증명
+            난이도. M1은 <em>누가</em> 묻는지에 가격을 매길 수 있게 하는
+            시그널을 추가합니다: JA4 TLS 지문과 ASN 평판이 캡핑된 리스크
+            엔진에 들어가고, PoW 솔버가 메인 스레드를 떠나며, 오리진이
+            Node.js와 Python에서 판정을 네이티브로 검증할 수 있습니다. 커밋
+            <code>bc87ed9</code>부터 <code>c7e4fc3</code>까지.
+          </p>
+          <p>
+            <mark>이 글은 내부 감사에서 원래의 “M1 완료” 주장에 일곱 개의
+            공백을 발견한 후 수정되었습니다.</mark> 여섯 개는 커밋
+            <code>067e9f7</code>에서 수정되었고, 하나는 솔직히 열린 채로
+            남아 있으며 아래에 적혀 있습니다. 수정 사항은 묻지 않고 여기에
+            문서화되어 있습니다.
           </p>
 
-          <h2>JA4 핑거프린팅 (ADR-0010)</h2>
+          <h2>시그널이 왜 필요한가 —— 그리고 왜 권고용만인가</h2>
           <p>
-            TLS client fingerprints distinguish real browsers from scripted
-            HTTP clients. The server reads <code>X-Mythic-JA4</code> (set by
-            a trusted proxy that terminates TLS) and scores the fingerprint
-            against known-browser patterns. Malformed or prefix-only values
-            are rejected from receiving the known-browser discount — a
-            parroted fingerprint remains a documented bypass, so JA4 is
-            advisory only, capped at a small risk contribution.
+            봇 완화는 시그널에 사느냐 죽느냐가 걸려 있고, 단독의 모든 시그널은
+            약합니다. JA4 지문은 조금만 신경 쓰면 어떤 클라이언트든 바이트
+            단위로 흉내 낼 수 있습니다. ASN은 휴리스틱입니다 —— 오늘은
+            데이터센터, 내일은 주거용 프록시. 둘 중 하나를 진실로 다루면,
+            단계를 더한 블록리스트를 만든 것입니다.
+          </p>
+          <p>
+            그래서 M1은 모든 네트워크 시그널을 <strong>권고용</strong>으로
+            다룹니다: 작고 하드캡된 기여로, 요청의 가격을 올릴 수는 있지만
+            단독으로 통과시키거나 정죄할 수는 없습니다. 흐름은 이렇습니다:
           </p>
 
-          <h2>ASN 스코어링 (ADR-0010)</h2>
+          <div class="fig" role="img" aria-label="리스크 시그널 흐름: JA4, ASN, 행동 시그널이 risk.Input에 들어가고, 캡핑된 스코어링이 0부터 100 사이의 점수를 만들며, 허용·챌린지·차단 중 하나로 매핑된다.">
+            <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">리스크 시그널 흐름</text>
+              <g font-size="12" text-anchor="middle">
+                <rect x="20" y="60" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="86" fill="#101210">JA4 지문</text>
+                <text x="110" y="104" font-size="10" fill="#55584F">프록시 설정 헤더</text>
+                <rect x="20" y="140" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="166" fill="#101210">ASN</text>
+                <text x="110" y="184" font-size="10" fill="#55584F">MaxMind 조회</text>
+                <rect x="20" y="220" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="246" fill="#101210">행동</text>
+                <text x="110" y="264" font-size="10" fill="#55584F">바이오메트릭</text>
+              </g>
+              <g stroke="#101210" stroke-width="1.5">
+                <line x1="200" y1="92" x2="300" y2="140"/><polygon points="300,140 290,134 290,146" fill="#101210"/>
+                <line x1="200" y1="172" x2="300" y2="160"/><polygon points="300,160 290,154 290,166" fill="#101210"/>
+                <line x1="200" y1="252" x2="300" y2="180"/><polygon points="300,180 290,174 290,186" fill="#101210"/>
+              </g>
+              <g font-size="12" text-anchor="middle">
+                <rect x="300" y="120" width="170" height="80" fill="#101210"/>
+                <text x="385" y="152" fill="#F4F3EE">risk.Input</text>
+                <text x="385" y="172" font-size="10" fill="#C6F531">challenge + verify</text>
+              </g>
+              <line x1="470" y1="160" x2="550" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="550,160 540,154 540,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="550" y="120" width="170" height="80" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="635" y="146" fill="#101210">캡핑된 스코어링</text>
+                <text x="635" y="166" font-size="11" fill="#55584F">score ∈ [0, 100]</text>
+                <text x="635" y="184" font-size="10" fill="#55584F">캡 검증됨</text>
+              </g>
+              <line x1="720" y1="160" x2="790" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="790,160 780,154 780,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="790" y="80" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="109" fill="#101210">허용</text>
+                <rect x="790" y="136" width="150" height="48" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="165" fill="#101210">챌린지</text>
+                <rect x="790" y="192" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="221" fill="#101210">차단</text>
+              </g>
+            </svg>
+            <p class="figcap mono">그림 1 — 모든 시그널은 권고용이며 캡핑되어 있습니다. 어떤 단일 시그널도 요청을 단독으로 통과시키거나 정죄할 수 없습니다.</p>
+          </div>
+
+          <h2>JA4 핑거프린팅: 할인, 캡핑, 불신</h2>
           <p>
-            Autonomous System Numbers add a network-level signal: datacenter
-            and hosting ASNs score higher than residential ISPs. A new
-            <code>ASNLookup</code> component resolves client IPs via a
-            MaxMind GeoLite2-ASN database (<code>MYTHIC_ASN_DB</code>).
-            Empty path means the signal is disabled — valid. A configured
-            path that fails to open refuses startup: fail-closed on
-            misconfiguration, not silent degradation.
+            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0010-ja4-asn-signals.md" rel="noopener">ADR-0010</a>.
+            서버는 종료 프록시가 설정한 <code>X-Mythic-JA4</code>에서 JA4
+            지문을 읽습니다 —— 클라이언트에서 직접 절대 받지 않습니다.
+            클라이언트가 제공한 값은 공격자가 제어하므로. 지문은 알려진
+            브라우저 JA4 패턴과 매칭됩니다; 매칭되면 작은 리스크 할인을
+            적용하며, 챌린지를 단독으로 통과시킬 수 없도록 캡핑됩니다. 형식이
+            잘못된 값과 접두사만 일치하는 경우는 할인 경로에서 완전히
+            거부됩니다 (<code>a8ce95a</code>). 모든 캡은 시작 시 검증되며,
+            적대적 튜닝 값은 서비스를 거부합니다 (<code>8f560bd</code>).
+          </p>
+          <p>
+            명시된 한계: JA4는 권고용입니다. 실제 브라우저의 지문을 바이트
+            단위로 흉내 내는 클라이언트는 이 레이어에서 구분할 수 없습니다.
+            할인이 작은 이유는 바로 시그널이 위조 가능하기 때문입니다 ——
+            순진한 스크립팅의 비용을 올릴 뿐, 그 이상은 아닙니다.
           </p>
 
-          <h2>PoW 솔빙용 Web Worker</h2>
+          <h2>ASN 스코어링: 닫힌 방향으로 실패하는 휴리스틱</h2>
           <p>
-            The proof-of-work grind ran on the main thread, freezing the
-            page at high difficulty. <code>solveInWorker()</code> packages
-            the solver as a Web Worker via Blob URL — no separate worker
-            file to host, works with any bundler. It falls back to
-            main-thread solving when Workers are unavailable (SSR, Node).
-            <code>MythicClient</code> uses the worker by default and
-            auto-starts behavioral collection on construction.
+            같은 ADR. 클라이언트 IP는 MaxMind GeoLite2-ASN 데이터베이스
+            (<code>MYTHIC_ASN_DB</code>)를 통해 Autonomous System Number로
+            해석됩니다. 데이터센터, 호스팅, VPN 출구 ASN은 리스크에
+            기여하고; 주거용 ISP ASN은 기여하지 않습니다. 조회는 전역적으로
+            nil-safe합니다: 빈 <code>MYTHIC_ASN_DB</code>는 시그널을
+            깔끔하게 비활성화하고, 열기에 실패하는 설정된 경로는 시작 시
+            치명적입니다. 설정 오류는 닫힌 방향으로 실패합니다; 부재는
+            설계상 조용히 저하됩니다 —— 운영자가 활성화하지 않기로 선택한
+            것입니다.
+          </p>
+          <p>
+            <mark>감사 수정:</mark> 원래 테스트는 실패 모드만 커버했습니다
+            (nil, 빈 경로, 잘못된 경로, 유효하지 않은 IP) —— 정상 조회는
+            한 번도 실행되지 않았습니다. <code>067e9f7</code>은 저장소 안에서
+            생성한 합성 <code>.mmdb</code> 픽스처에 대한
+            <code>TestASNLookupPositive</code>를 추가했습니다 (라이선스된
+            MaxMind 데이터가 아님). 해피 패스를 고정합니다: 데이터센터
+            범위는 스코어하고, 주거용 범위는 하지 않습니다.
           </p>
 
-          <h2>오리진 검증 헬퍼</h2>
+          <h2>Web Worker 솔버: 메인 스레드를 떠난 PoW</h2>
           <p>
-            Decision tokens were only verifiable in Go. Origins running
-            Node.js or Python can now verify tokens locally with new
-            helpers: <code>parsePublicKey</code>/<code>verifyToken</code>
-            for Node, <code>parse_public_key</code>/<code>verify_token</code>
-            for Python. Both enforce Ed25519 signatures, expiry, and
-            canonical base64url encoding. Cross-language verified: a token
-            generated by the Go server verifies in both.
+            SHA-256 연산은 이전에 메인 스레드에서 돌았습니다 —— 난이도 24
+            이상에서는 페이지가 몇 초 동안 멈췄습니다. SDK는 이제
+            <code>solveInWorker()</code>를 제공합니다: 자체 완결형 솔버를
+            Blob URL로 문자열화해 오프스레드에서 실행합니다. 배포할 별도의
+            워커 파일도 없고, 번들러 플러그인도 필요 없습니다. 진행 콜백은
+            2048 반복마다 발사되고, <code>AbortSignal</code>은 워커를
+            종료하고 URL을 해제합니다:
+          </p>
+          <pre><code>export async function solveInWorker(
+  challenge: Challenge,
+  opts: SolveInWorkerOptions = {},
+): Promise&lt;Solution&gt; {
+  // No Worker API (Node, SSR) → fall back to main thread.
+  if (typeof Worker === "undefined") {
+    const { solve } = await import("./pow");
+    return solve(challenge, opts);
+  }
+  const workerCode = `(${workerMain.toString()})()`;
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  // …postMessage challenge, await solution, revoke URL
+}</code></pre>
+          <p>
+            <code>MythicClient</code>는 <code>useWorker</code>를 받으며
+            (기본값 <code>true</code>), 생성 시 행동 수집기를 자동으로
+            시작합니다. 하나의 클라이언트, 하나의 흐름, 수동 연결 없음.
+          </p>
+          <p>
+            <mark>알려진 공백, 솔직히 말하면:</mark> 워커 경로는 지금까지
+            Bun의 Worker 구현에서만 실행됐습니다 —— Chromium, Firefox,
+            Safari에서는 한 번도 없습니다. 이는
+            <code>sdk/js/README.md</code>에 문서화되어 있고, 그 외의
+            주장은 하지 않습니다. Playwright 스위트를 시도했지만, 빌드
+            환경이 브라우저 바이너리를 가져올 수 없었습니다. 그게 바뀌기
+            전까지 실제 브라우저 동작은 테스트되지 않았고 주장하지도
+            않습니다.
           </p>
 
-          <h2>검증</h2>
+          <h2>오리진 검증: Node.js와 Python</h2>
           <p>
-            <code>go vet</code> clean, <code>go test ./... -race</code>
-            green, SDK <code>tsc --noEmit</code> and <code>bun test</code>
-            green (15 tests), Python <code>pytest</code> green (6 tests).
-            Every new signal documents its bypass first, per the project's
-            rule. What remains: M2 (behavioral biometrics, closing the
-            delay-attack gap) and M5 (shared keystore for multi-node
-            verification).
+            판정 토큰은 Go (<code>server/xtoken</code>)에서만 검증
+            가능했습니다. 오리진은 이제 네이티브 헬퍼를 받습니다.
+            <code>sdk/js/src/verify.ts</code> ——
+            <code>parsePublicKey(x)</code>는 JWKS raw 키를 DER SPKI로
+            감싸고; <code>verifyToken(pub, token)</code>은 raw 페이로드
+            바이트에 대한 Ed25519 서명을 확인하고 (사전 해시 없음),
+            canonical base64url 재인코딩을 강제하며, 만료된 토큰을
+            거부합니다:
+          </p>
+          <pre><code>// Canonical encodings only: re-encoding the decoded bytes
+// must reproduce the input exactly. Go's base64 decoder
+// silently discards unused low bits of a trailing character,
+// so distinct strings can decode to the same token.
+if base64.RawURLEncoding.EncodeToString(payload) != payloadPart ||
+    base64.RawURLEncoding.EncodeToString(sig) != sigPart {
+    return nil, fmt.Errorf("%w: non-canonical encoding", ErrInvalidToken)
+}</code></pre>
+          <p>
+            <code>sdk/python/mythic/verify.py</code> ——
+            <code>cryptography</code> 패키지를 통한 동일한 의미:
+            <code>parse_public_key</code>, <code>verify_token</code>,
+            <code>TokenClaims</code> 데이터클래스, 모든 거부 시
+            <code>TokenError</code>. Python SDK는 이제 CI에 있으며
+            (<code>.github/workflows/sdk-python-ci.yml</code>)
+            <code>make test</code> 하에서 실행됩니다 —— 이전에는 아무것도
+            자동으로 실행하지 않았습니다.
+          </p>
+          <p>
+            크로스 언어 검증 후 커밋: <code>e2e/crosslang.sh</code>가 라이브
+            Go 서버에서 토큰을 발행하고 Go, Python, JS 세 곳에서 동일하게
+            검증합니다 (<code>dec=allow risk=6</code>, 세 곳 모두).
+          </p>
+
+          <h2>증거</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>스위트</th><th>결과</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>go build ./...</code> · <code>go vet ./...</code></td><td>clean</td></tr>
+                <tr><td><code>go test -race -count=1</code></td><td>7/7 패키지, 0 data race</td></tr>
+                <tr><td><code>bun test</code> (JS SDK)</td><td>17/17</td></tr>
+                <tr><td><code>tsc --noEmit</code> · <code>bun run build</code></td><td>clean</td></tr>
+                <tr><td><code>pytest</code> (Python SDK)</td><td>6/6</td></tr>
+                <tr><td><code>e2e/crosslang.sh</code></td><td>Go, Python, JS가 라이브 토큰에 동의</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            스코어링 계약 자체가 코드에 고정되어 있습니다 —— 적대적 튜닝은
+            서명된 토큰에 범위를 벗어난 점수를 누출할 수 없습니다 (레드팀
+            발견 H3, 회귀 테스트됨):
+          </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+// dashboards, tuning docs). Hostile tuning must clamp
+// here, not leak 500 into tokens (red-team H3).
+if score > 100 {
+    score = 100
+}
+if score &lt; 0 {
+    score = 0
+}</code></pre>
+
+          <h2>감사가 바꾼 것</h2>
+          <p>
+            원래의 “M1 완료” 주장 이후, 처음부터 다시 한 감사 (새 클론, 모든
+            스위트 재실행, verify 경로에 대한 적대적 패스)가 일곱 개의 공백을
+            발견했습니다. 커밋 <code>067e9f7</code> (“fix(audit): close all 7
+            M1 audit gaps”)이 그 중 여섯 개를 닫았습니다:
+          </p>
+          <ul>
+            <li>ASN positive 테스트 추가 (실패 모드만 있었던 것을 수정).</li>
+            <li>행동 힌트가 이제 <code>verify()</code> 시점에 전송됨 —— 이전에는 수집기가 챌린지 이후 멈춰, 서버의 verify 단계 행동 파싱이 사실상 데드 코드였다.</li>
+            <li>Python SDK를 CI와 <code>make test</code>에 추가.</li>
+            <li>크로스 언어 E2E 커밋 (<code>e2e/crosslang.sh</code>).</li>
+            <li><code>docs/ROADMAP.md</code> 수정 —— 완료된 M1 항목이 여전히 계획 중으로 표시되어 있었음.</li>
+            <li>오해의 소지가 있는 워커 테스트 이름 수정 (실제 워커 경로를 테스트하면서 폴백을 테스트한다고 주장했다).</li>
+          </ul>
+          <p>
+            일곱 번째 —— Web Worker에 대한 실제 브라우저 테스트 —— 는 열린
+            채로 남아 있으며, 완료된 것으로 주장하는 대신 알려진 공백으로
+            문서화되어 있습니다. 이것이 M1의 현재 솔직한 상태입니다.
+          </p>
+
+          <h2>열린 질문</h2>
+          <p>
+            실제 브라우저 워커 커버리지가 위의 유일한 열린 항목입니다. 그
+            너머: IP 평판 피드는 여전히 계획 중이며 (ROADMAP, 솔직히
+            표시됨), M2 행동 바이오메트릭과 크로스 노드 검증을 위한 M5 공유
+            키스토어가 다음 마일스톤으로 남아 있습니다. 프로젝트 규칙에
+            따라, 모든 새 시그널의 바이패스는 시그널이 출시되기 전에
+            문서화됩니다 —— ADR-0010 § “Bypasses” 참조.
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

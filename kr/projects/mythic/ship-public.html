@@ -19,6 +19,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -53,67 +61,113 @@
         <div class="post-body">
           <p>
             오늘 랩의 첫 프로젝트가 저장소에서 기록으로 넘어갑니다:
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            —— 적응형 봇 완화. 캡차가 지는 시대를 위한 대체품입니다. AGPL-3.0,
-            오늘부로 완전 공개.
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a> ——
+            적응형 봇 완화. 캡차가 지는 시대를 위한 캡차 대체품으로 만들었습니다.
+            오늘부로 AGPL-3.0, 완전 공개입니다.
           </p>
 
-          <h2>우리가 고른 문제</h2>
+          <h2>캡차는 죽었다, 그 죽음은 측정 가능하다</h2>
           <p>
-            캡차는 죽었고, 그 죽음은 측정됩니다. 솔빙 팜은 천 개의 답을 점심값보다
-            싸게 팝니다. 비전 모델은 이미지 퍼즐을 텍스트처럼 읽습니다. 스텔스
-            브라우저는 그들을 잡으려던 지문 검사를 태연히 통과합니다. 모든 정적
-            퍼즐은 하나의 실패 모드를 공유합니다: <strong>솔버가 한 번 발견되면,
-            영원히 죽습니다.</strong>
+            솔빙 팜은 천 개의 답을 점심값보다 싸게 팝니다. 비전 모델은 이미지
+            퍼즐을 텍스트처럼 읽습니다. 스텔스 브라우저는 잡기로 되어 있던 지문
+            검사를 태연히 지나갑니다. 모든 정적 퍼즐은 하나의 실패 모드를
+            공유합니다: <strong>솔버가 한 번 발견되면, 영원히 죽습니다.</strong>
+            모든 단계에서 경제성은 공격자에게 유리합니다 —— 그래서 우리는 더
+            나은 퍼즐을 만드는 것을 그만두고 대신 남용에 가격을 매기기
+            시작했습니다.
           </p>
 
           <h2>테제: 클라이언트를 절대 신뢰하지 마라</h2>
           <p>
-            Mythic는 브라우저를 기본적으로 적대적인 것으로 가정합니다. 클라이언트에서
-            도착하는 모든 바이트는 적대적 입력 —— 그래서 클라이언트 SDK는
-            <em>센서</em>이지, 결코 심판이 아닙니다. 결정은 서버 측에서, 이름 붙고
-            감사 가능한 이유를 출력하는 결정론적 리스크 엔진이 내립니다. 남용의
-            가격은 층층이 쌓입니다: 적응형 작업증명은 인간에게 웹 워커 안에서 약
-            1초 —— 봇 팜에는 같은 비용이 요청마다, 영원히. 위험한 트래픽은 더 어려운
-            챌린지를 받고, 중요한 작업은 암호학적 증명을 요구할 수 있습니다. 판정은
-            수명이 짧은 Ed25519 서명 토큰으로 전달되며, 백엔드가 로컬에서 검증합니다
-            —— 콜백 없이.
+            Mythic은 브라우저를 기본적으로 적대적인 것으로 가정합니다.
+            클라이언트에서 도착하는 모든 바이트는 적대적 입력입니다 —— 그래서
+            클라이언트 SDK는 <em>센서</em>이지, 결코 심판이 아닙니다. 결정은
+            서버 측에서 내려집니다. 이름 붙고 감사 가능한 이유를 출력하는
+            결정론적 리스크 엔진에서요.
           </p>
           <p>
-            <mark>목표는 결코 "뚫리지 않음"이 아니었습니다. 목표는 남용을 경제적으로
-            비합리적으로 만드는 것입니다.</mark>
-          </p>
-
-          <h2>먼저 우리가 부쳤습니다</h2>
-          <p>
-            출시 전에, 우리가 직접 공격을 실행했습니다. 토큰 형식에 대한 만 번의
-            변이 폭풍은 실제 수용 버그를 잡아냈습니다: 서로 다른 문자열이 동일한
-            서명된 바이트로 디코딩될 수 있다는 것. 라이브 카오스 세션은 위조된
-            헤더 하나로 IP별 레이트 리미터를 스무 번 중 스무 번 우회할 수 있음을
-            발견했습니다. 둘 다 수정되었고, 둘 다 회귀 테스트로 고정되었으며, 이제
-            모든 푸시마다 퍼저가 CI에서 검증 경로를 갈아듭니다. 바이패스 보고서가
-            가장 유용한 부분입니다 —— <strong>이 프로젝트가 보상하고 싶은 문화가
-            바로 그것입니다.</strong>
+            남용에 매기는 가격은 층층이 쌓입니다: 적응형 작업증명은 인간에게는
+            웹 워커 안에서 약 1초 —— 봇 팜에게는 요청마다 영원히 같은
+            비용입니다. 위험한 트래픽은 더 어려운 챌린지를 받고, 중요한 작업은
+            암호학적 증명을 요구할 수 있습니다. 그리고 판정은 수명이 짧은
+            Ed25519 서명 토큰으로 전달되며, 여러분의 백엔드가 로컬에서
+            검증합니다 —— 콜백이 필요 없습니다.
           </p>
 
-          <h2>솔직히 아직 못 하는 것</h2>
+          <div class="fig" role="img" aria-label="비용 비대칭: 인간은 약 1초를 한 번 지불하고, 봇 팜은 요청마다 영원히 같은 비용을 지불한다.">
+            <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">경제적 논거</text>
+              <g font-size="12">
+                <text x="20" y="80" fill="#101210">인간</text>
+                <rect x="180" y="58" width="120" height="32" fill="#101210"/>
+                <text x="320" y="80" fill="#55584F" font-size="11">워커에서 ≈1초, 그리고 끝</text>
+                <text x="20" y="150" fill="#101210">봇 팜</text>
+                <rect x="180" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="312" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="444" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="600" y="150" fill="#101210" font-size="14">× N</text>
+                <text x="640" y="150" fill="#55584F" font-size="11">같은 ≈1초 —— 요청마다, 영원히</text>
+              </g>
+              <text x="20" y="200" font-size="11" fill="#55584F">목표는 결코 “뚫리지 않음”이 아니었습니다. 목표는 남용을 경제적으로 비합리적으로 만드는 것입니다.</text>
+            </svg>
+            <p class="figcap mono">그림 1 — 1초는 인간에게는 아무것도 아니지만 백만 요청을 돌리는 팜에게는 모든 것입니다.</p>
+          </div>
+
+          <h2>판정은 토큰이다, 콜백이 아니다</h2>
           <p>
-            v0은 스텔스 브라우저와 네이티브 솔버를 갖춘 자금력 있는 운영자에게는
-            집니다. 우리는 위협 모델에 글로 적어 두었습니다. 답은 로드맵이지
-            분위기가 아닙니다: 행동 바이오메트릭, 암호학적 단계 상승, 학습 엔진.
+            서버가 결정하면, 그 결정을 Ed25519로 서명합니다 —— 리스크 점수,
+            난이도, 만료를. 여러분의 오리진은 JWKS 엔드포인트의 공개 키로
+            로컬에서 검증합니다. mythicd에 대한 요청당 콜백도, 유출될 공유
+            비밀도 없습니다:
+          </p>
+          <pre><code>claims, err := xtoken.VerifyToken(pub, token)
+if err != nil {
+    // reject: malformed, bad signature, or expired
+}
+// claims.Decision and claims.Risk are yours to enforce;
+// verification only proves mythicd signed these claims.</code></pre>
+          <p>
+            HTTP 표면은 두 개의 엔드포인트입니다. 챌린지 인, 증명 아웃:
+          </p>
+          <pre><code>$ curl -s mythicd:8080/v1/challenge \
+    -d '{"site_key":"sk_live_..."}'
+# → {"id":"ch_01J…","difficulty":18,…}
+
+# solve the SHA-256 PoW, then:
+$ curl -s mythicd:8080/v1/verify \
+    -d '{"challenge_id":"ch_01J…","nonce":"48291033"}'
+# → decision token (or a harder challenge)</code></pre>
+
+          <h2>먼저 우리가 깨뜨리려 했다</h2>
+          <p>
+            출시 전에, 우리는 직접 공격을 실행했습니다. 토큰 형식을 대상으로 한
+            만 번의 변이 폭풍이 실제 수용 버그를 잡아냈습니다: 서로 다른 문자열이
+            동일한 서명된 바이트로 디코딩되는 것. 라이브 카오스 세션은 위조된
+            헤더 하나로 IP별 레이트 리미터를 스무 번 중 스무 번 무너뜨릴 수
+            있음을 발견했습니다. 둘 다 수정되었습니다. 둘 다 회귀 테스트로
+            고정되었습니다. 퍼저가 이제 모든 푸시마다 CI에서 검증 경로를
+            갈아댑니다. 바이패스 보고서가 가장 유용한 부분이었습니다 ——
+            <strong>이 프로젝트가 보상하고 싶은 문화가 바로 그것입니다.</strong>
+          </p>
+
+          <h2>솔직히 아직 못하는 것</h2>
+          <p>
+            v0는 스텔스 브라우저와 네이티브 솔버를 갖춘 자금력 있는 운영자에게
+            집니다. 위협 모델에 글로 적어 두었습니다. 답은 로드맵이지 분위기가
+            아닙니다: 행동 바이오메트릭, 암호학적 단계 상승, 학습 엔진.
             기본적으로 공개라는 것은 구멍도 공개라는 뜻입니다.
           </p>
 
           <h2>라이선스</h2>
           <p>
-            모든 것 —— 엔진과 SDK —— 가 AGPL-3.0-or-later입니다. 읽고, 클론하고,
-            부수세요. 부쉈다면 먼저
+            모든 것 —— 엔진과 SDK —— 은 AGPL-3.0-or-later입니다. 읽고, 클론하고,
+            깨뜨리세요. 깨뜨렸다면 먼저
             <a href="https://github.com/xeylabs/mythic/security/advisories/new" rel="noopener">비공개로</a>
-            알려 주세요. 기여는 저장소의 CLA에 따라 환영합니다.
+            알려 주세요. 기여는 저장소의 CLA 하에 환영합니다.
           </p>
 
           <p>
-            프로젝트 001이 라이브입니다. 프로젝트 002는 이미 대기 중입니다.
+            프로젝트 001이 라이브입니다. 프로젝트 002가 이미 대기 중입니다.
           </p>
           <p class="post-sign">— XEY LABS, 출시일</p>
         </div>

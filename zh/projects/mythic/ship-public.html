@@ -19,6 +19,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -52,49 +60,95 @@
         <h1>项目 001：Mythic 公开发布。</h1>
         <div class="post-body">
           <p>
-            今天，实验室的第一个项目从仓库变成了记录：
+            今天，实验室的第一个项目从仓库变成记录：
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            —— 自适应反机器人系统，为验证码落败的时代而生的替代品。AGPL-3.0，
-            自今天起完全公开。
+            —— 自适应反机器人系统，为验证码落败的时代打造的验证码替代品。
+            AGPL-3.0，自今日起完全公开。
           </p>
 
-          <h2>我们选中的问题</h2>
+          <h2>验证码已死，且死法可度量</h2>
           <p>
-            验证码已经死了，而且死得可测量。打码平台卖一千个答案比一顿午饭还便宜。
-            视觉模型把图像谜题当文字读。隐身浏览器迈过本该抓住它们的指纹检查。
-            所有静态谜题共享同一种失败方式：<strong>一个解题器，被发现一次，
-            就永远杀死它。</strong>
+            打码平台以不到一顿午饭的价格卖出一千个答案。视觉模型把图像谜题
+            读得像文字。隐身浏览器大摇大摆走过本该抓住它们的指纹检查。每个
+            静态谜题共享同一种失败模式：
+            <strong>一个解题器，被发现一次，就永远杀死它。</strong>
+            经济学的每一步都站在攻击者一边 —— 所以我们不再试图造一个更好的
+            谜题，而是开始给滥用定价。
           </p>
 
-          <h2>论点：永远不要信任客户端</h2>
+          <h2>论点：永不信任客户端</h2>
           <p>
-            Mythic 默认假设浏览器充满敌意。来自客户端的每一个字节都是对抗性
-            输入 —— 所以客户端 SDK 是<em>传感器</em>，绝不是裁判。决策发生在
-            服务端，由一个确定性的风险引擎给出有名有据、可审计的理由。滥用被
-            分层定价：自适应工作量证明对人类来说大约是在 Web Worker 里花一秒
-            —— 而对机器人农场，同样的成本按请求计算、永远如此。高风险流量拿到
-            更难的挑战；关键操作可以要求加密证明。裁决以短时效、Ed25519 签名的
-            令牌传递，你的后端本地即可验证 —— 无需回调。
+            Mythic 默认把浏览器当作敌方。来自客户端的每一个字节都是对抗性
+            输入 —— 因此客户端 SDK 只是一个<em>传感器</em>，永远不是裁判。
+            决策发生在服务端，在一个确定性的风险引擎里，输出具名、可审计的
+            理由。
           </p>
           <p>
-            <mark>目标从来不是"攻不破"。目标是让滥用在经济上变得不理性。</mark>
+            对滥用的定价是分层的：自适应工作量证明让人类在 Web Worker 里付出
+            大约一秒 —— 而机器人农场的每个请求都要付出同样的成本，永远如此。
+            高风险流量拿到更难的挑战。关键操作可以要求密码学证明。裁决以
+            短时效的 Ed25519 签名令牌传递，你的源站用 JWKS 端点的公钥在本地
+            验证 —— 无需逐请求回调 mythicd，无需共享会泄露的密钥。
           </p>
 
-          <h2>我们先自己动手攻破</h2>
+          <div class="fig" role="img" aria-label="成本不对称：人类只需付出约一秒的成本一次，机器人农场每个请求都要付出同样的成本，永远如此。">
+            <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">经济论证</text>
+              <g font-size="12">
+                <text x="20" y="80" fill="#101210">人类</text>
+                <rect x="180" y="58" width="120" height="32" fill="#101210"/>
+                <text x="320" y="80" fill="#55584F" font-size="11">≈1 秒，在 worker 里，一次搞定</text>
+                <text x="20" y="150" fill="#101210">机器人农场</text>
+                <rect x="180" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="312" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="444" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="600" y="150" fill="#101210" font-size="14">× N</text>
+                <text x="640" y="150" fill="#55584F" font-size="11">同样 ≈1 秒 —— 每个请求，永远如此</text>
+              </g>
+              <text x="20" y="200" font-size="11" fill="#55584F">目标从来不是"不可攻破"。目标是让滥用在经济上不理性。</text>
+            </svg>
+            <p class="figcap mono">图 1 —— 对人类来说一秒不值一提，对跑一百万请求的农场来说，一秒就是一切。</p>
+          </div>
+
+          <h2>裁决是一个令牌，而不是回调</h2>
           <p>
-            发布之前，我们先攻击了自己。对令牌格式的一万次变异风暴抓到一个真实
-            的接受漏洞：不同的字符串可以解码出相同的已签名字节。一场现场混沌
-            测试发现一个伪造头能二十次全部绕过按 IP 的限流器。两个都已修复、
-            都被回归测试钉死，并且现在每次推送都有模糊测试器在 CI 里碾过验证
-            路径。绕过报告才是最有用的部分 —— <strong>这就是我们希望这个项目
-            奖励的文化。</strong>
+            当服务端做出决定，它会对决定签名 —— 风险分值、难度、有效期 ——
+            用 Ed25519。你的源站用 JWKS 端点的公钥在本地验证它。无需对
+            mythicd 做逐请求回调，无需共享会泄露的密钥：
+          </p>
+          <pre><code>claims, err := xtoken.VerifyToken(pub, token)
+if err != nil {
+    // reject: malformed, bad signature, or expired
+}
+// claims.Decision and claims.Risk are yours to enforce;
+// verification only proves mythicd signed these claims.</code></pre>
+          <p>
+            HTTP 接口只有两个端点。挑战进，证明出：
+          </p>
+          <pre><code>$ curl -s mythicd:8080/v1/challenge \
+    -d '{"site_key":"sk_live_..."}'
+# → {"id":"ch_01J…","difficulty":18,…}
+
+# solve the SHA-256 PoW, then:
+$ curl -s mythicd:8080/v1/verify \
+    -d '{"challenge_id":"ch_01J…","nonce":"48291033"}'
+# → decision token (or a harder challenge)</code></pre>
+
+          <h2>我们先自己动手攻破它</h2>
+          <p>
+            发布之前，我们自己先发动了攻击。一场对令牌格式的一万次变异风暴
+            抓到一个真实的接受漏洞：不同的字符串解码出相同的已签名字节。一场
+            现场混沌测试发现一个伪造头部能二十次全部绕过按 IP 的限流器。
+            两个都已修复。两个都被回归测试钉住。模糊测试器现在在每次推送时
+            于 CI 中碾过验证路径。绕过报告才是最有用的部分 ——
+            <strong>这就是我们希望这个项目奖励的文化。</strong>
           </p>
 
           <h2>它诚实地还做不到什么</h2>
           <p>
-            v0 会输给资金充足、拥有隐身浏览器和原生解题器的操作者。我们在威胁
-            模型里白纸黑字地承认。答案是路线图，不是气氛组：行为生物特征、
-            加密升级验证、学习引擎。默认公开，意味着缺口也公开。
+            v0 会输给资金充足、拥有隐身浏览器和原生解题器的运营者。我们在威胁
+            模型里白纸黑字地写明了。答案是路线图，不是氛围：行为生物特征、
+            密码学升级验证、学习引擎。默认公开意味着缺口也公开。
           </p>
 
           <h2>许可证</h2>
@@ -102,7 +156,7 @@
             一切 —— 引擎与 SDK —— 均为 AGPL-3.0-or-later。读它、克隆它、攻破它。
             如果你攻破了，请先
             <a href="https://github.com/xeylabs/mythic/security/advisories/new" rel="noopener">私下</a>
-            告诉我们。欢迎按仓库中的 CLA 贡献代码。
+            告诉我们。欢迎按照仓库中的 CLA 贡献代码。
           </p>
 
           <p>

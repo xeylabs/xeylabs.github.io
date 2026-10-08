@@ -19,6 +19,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到内容</a>
@@ -52,67 +63,233 @@
         <h1>M1 完成：网络信号、Worker 求解器、源站 SDK。</h1>
         <div class="post-body">
           <p>
-            M1 is done. Four items closed in
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
-            JA4 TLS fingerprinting, ASN-based network scoring, a packaged Web
-            Worker for proof-of-work, and origin verification helpers for
-            Node.js and Python. Commits
-            <code>bc87ed9</code> through <code>c7e4fc3</code>.
+            M1 是"自适应"不再是
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            README 里的形容词、而成为机制的里程碑。此前服务端只有一件给滥用
+            定价的工具 —— 工作量证明难度。M1 加入了让它能对<em>谁</em>在发问
+            定价的信号：JA4 TLS 指纹和 ASN 信誉输入一个带上限的风险引擎，
+            PoW 求解器搬离主线程，源站现在可以在 Node.js 和 Python 里原生
+            验证裁决。提交
+            <code>bc87ed9</code> 至 <code>c7e4fc3</code>。
+          </p>
+          <p>
+            <mark>本文在一次内部审计发现了原始"M1 完成"声明中的七处缺口后修订。
+            六处已在提交 <code>067e9f7</code> 中修复；一处仍诚实地敞开，下文会写明。
+            修正记录在此公开，而不是被埋起来。</mark>
           </p>
 
-          <h2>JA4 指纹识别 (ADR-0010)</h2>
+          <h2>为什么要信号 —— 以及为什么只做参考</h2>
           <p>
-            TLS client fingerprints distinguish real browsers from scripted
-            HTTP clients. The server reads <code>X-Mythic-JA4</code> (set by
-            a trusted proxy that terminates TLS) and scores the fingerprint
-            against known-browser patterns. Malformed or prefix-only values
-            are rejected from receiving the known-browser discount — a
-            parroted fingerprint remains a documented bypass, so JA4 is
-            advisory only, capped at a small risk contribution.
+            反机器人的成败取决于信号，而每个孤立的信号都很弱。任何愿意费事的
+            客户端都能逐字节鹦鹉学舌一个 JA4 指纹。ASN 只是启发式 —— 今天是
+            数据中心，明天是住宅代理。把任何一个当作真理，你就是在用额外的
+            步骤建一个黑名单。
+          </p>
+          <p>
+            所以 M1 把每个网络信号都当作<strong>参考</strong>：
+            小而硬上限的贡献，可以提高一个请求的代价，但永远不能单方面放行
+            或定罪。流程是这样的：
           </p>
 
-          <h2>ASN 评分 (ADR-0010)</h2>
+          <div class="fig" role="img" aria-label="风险信号流：JA4、ASN 与行为信号输入 risk.Input，带上限的评分产出 0 到 100 的分数，再映射为放行、挑战或拦截。">
+            <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">风险信号流</text>
+              <g font-size="12" text-anchor="middle">
+                <rect x="20" y="60" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="86" fill="#101210">JA4 指纹</text>
+                <text x="110" y="104" font-size="10" fill="#55584F">代理设置的头</text>
+                <rect x="20" y="140" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="166" fill="#101210">ASN</text>
+                <text x="110" y="184" font-size="10" fill="#55584F">MaxMind 查询</text>
+                <rect x="20" y="220" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="246" fill="#101210">行为</text>
+                <text x="110" y="264" font-size="10" fill="#55584F">生物特征</text>
+              </g>
+              <g stroke="#101210" stroke-width="1.5">
+                <line x1="200" y1="92" x2="300" y2="140"/><polygon points="300,140 290,134 290,146" fill="#101210"/>
+                <line x1="200" y1="172" x2="300" y2="160"/><polygon points="300,160 290,154 290,166" fill="#101210"/>
+                <line x1="200" y1="252" x2="300" y2="180"/><polygon points="300,180 290,174 290,186" fill="#101210"/>
+              </g>
+              <g font-size="12" text-anchor="middle">
+                <rect x="300" y="120" width="170" height="80" fill="#101210"/>
+                <text x="385" y="152" fill="#F4F3EE">risk.Input</text>
+                <text x="385" y="172" font-size="10" fill="#C6F531">challenge + verify</text>
+              </g>
+              <line x1="470" y1="160" x2="550" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="550,160 540,154 540,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="550" y="120" width="170" height="80" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="635" y="146" fill="#101210">带上限的评分</text>
+                <text x="635" y="166" font-size="11" fill="#55584F">score ∈ [0, 100]</text>
+                <text x="635" y="184" font-size="10" fill="#55584F">上限已校验</text>
+              </g>
+              <line x1="720" y1="160" x2="790" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="790,160 780,154 780,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="790" y="80" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="109" fill="#101210">放行</text>
+                <rect x="790" y="136" width="150" height="48" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="165" fill="#101210">挑战</text>
+                <rect x="790" y="192" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="221" fill="#101210">拦截</text>
+              </g>
+            </svg>
+            <p class="figcap mono">图 1 —— 每个信号都只是参考且有上限。没有任何一个信号能单独放行或定罪一个请求。</p>
+          </div>
+
+          <h2>JA4 指纹：有折扣、有上限、不被信任</h2>
           <p>
-            Autonomous System Numbers add a network-level signal: datacenter
-            and hosting ASNs score higher than residential ISPs. A new
-            <code>ASNLookup</code> component resolves client IPs via a
-            MaxMind GeoLite2-ASN database (<code>MYTHIC_ASN_DB</code>).
-            Empty path means the signal is disabled — valid. A configured
-            path that fails to open refuses startup: fail-closed on
-            misconfiguration, not silent degradation.
+            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0010-ja4-asn-signals.md" rel="noopener">ADR-0010</a>。
+            服务端从 <code>X-Mythic-JA4</code> 读取 JA4 指纹，该头由终止代理
+            设置 —— 绝不直接来自客户端，因为客户端给出的任何值都受攻击者
+            控制。指纹与已知浏览器 JA4 模式匹配；命中后应用一个小的风险折扣，
+            上限让它无法单凭自己清掉一个挑战。格式错误的值和只有前缀匹配的
+            值会被完全排除在折扣路径之外（<code>a8ce95a</code>）。所有上限在
+            启动时校验；敌对的调参值拒绝服务（<code>8f560bd</code>）。
+          </p>
+          <p>
+            写明的限制：JA4 只是参考。逐字节鹦鹉学舌真实浏览器指纹的客户端
+            在这一层无法区分。折扣很小，正因为信号可伪造 —— 它只提高了朴素
+            脚本的成本，仅此而已。
           </p>
 
-          <h2>用于 PoW 求解的 Web Worker</h2>
+          <h2>ASN 评分：失败时关闭的启发式</h2>
           <p>
-            The proof-of-work grind ran on the main thread, freezing the
-            page at high difficulty. <code>solveInWorker()</code> packages
-            the solver as a Web Worker via Blob URL — no separate worker
-            file to host, works with any bundler. It falls back to
-            main-thread solving when Workers are unavailable (SSR, Node).
-            <code>MythicClient</code> uses the worker by default and
-            auto-starts behavioral collection on construction.
+            同一个 ADR。客户端 IP 经 MaxMind GeoLite2-ASN 数据库
+            （<code>MYTHIC_ASN_DB</code>）解析为自治系统号。数据中心、托管和
+            VPN 出口 ASN 贡献风险；住宅 ISP ASN 不贡献。查找处处 nil 安全：
+            空的 <code>MYTHIC_ASN_DB</code> 会干净地禁用该信号，而已配置却
+            打不开的路径会在启动时致命。配置错误时关闭失败；缺席时按设计
+            静默降级 —— 因为那是运营者主动选择不启用。
+          </p>
+          <p>
+            <mark>审计修正：</mark>原始测试只覆盖了失败模式（nil、空路径、
+            坏路径、非法 IP）—— 从未真正跑过一次正向查找。
+            <code>067e9f7</code> 增加了 <code>TestASNLookupPositive</code>，
+            用仓库内生成的合成 <code>.mmdb</code> 夹具（非授权 MaxMind 数据）
+            钉住正向路径：数据中心网段得分，住宅网段不得分。
           </p>
 
-          <h2>源站验证助手</h2>
+          <h2>Web Worker 求解器：PoW 搬离主线程</h2>
           <p>
-            Decision tokens were only verifiable in Go. Origins running
-            Node.js or Python can now verify tokens locally with new
-            helpers: <code>parsePublicKey</code>/<code>verifyToken</code>
-            for Node, <code>parse_public_key</code>/<code>verify_token</code>
-            for Python. Both enforce Ed25519 signatures, expiry, and
-            canonical base64url encoding. Cross-language verified: a token
-            generated by the Go server verifies in both.
+            SHA-256 暴力求解以前跑在主线程 —— 难度 24 以上页面会冻结数秒。
+            SDK 现在提供 <code>solveInWorker()</code>，把自包含的求解器
+            序列化成 Blob URL 在子线程跑。不需要单独部署 worker 文件；
+            不需要打包插件。进度回调每 2048 次迭代触发一次；
+            <code>AbortSignal</code> 终止 worker 并回收 URL：
+          </p>
+          <pre><code>export async function solveInWorker(
+  challenge: Challenge,
+  opts: SolveInWorkerOptions = {},
+): Promise&lt;Solution&gt; {
+  // No Worker API (Node, SSR) → fall back to main thread.
+  if (typeof Worker === "undefined") {
+    const { solve } = await import("./pow");
+    return solve(challenge, opts);
+  }
+  const workerCode = `(${workerMain.toString()})()`;
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  // …postMessage challenge, await solution, revoke URL
+}</code></pre>
+          <p>
+            <code>MythicClient</code> 接受 <code>useWorker</code>（默认
+            <code>true</code>），构造时自动启动行为采集器。一个客户端，一条
+            流程，不需要手工接线。
+          </p>
+          <p>
+            <mark>白纸黑字写一个已知缺口：</mark>worker 路径至今只跑在 Bun 的
+            Worker 实现上 —— 从未在 Chromium、Firefox 或 Safari 里跑过。这记录
+            在 <code>sdk/js/README.md</code> 里，不做其他宣称。曾尝试搭建
+            Playwright 套件；构建环境下载不到浏览器二进制文件。在此改变之前，
+            真实浏览器行为未经测试、也不宣称。
           </p>
 
-          <h2>验证</h2>
+          <h2>源站验证：Node.js 与 Python</h2>
           <p>
-            <code>go vet</code> clean, <code>go test ./... -race</code>
-            green, SDK <code>tsc --noEmit</code> and <code>bun test</code>
-            green (15 tests), Python <code>pytest</code> green (6 tests).
-            Every new signal documents its bypass first, per the project's
-            rule. What remains: M2 (behavioral biometrics, closing the
-            delay-attack gap) and M5 (shared keystore for multi-node
-            verification).
+            决策令牌以前只能在 Go（<code>server/xtoken</code>）里验证。源站现在
+            拿到原生助手。<code>sdk/js/src/verify.ts</code> ——
+            <code>parsePublicKey(x)</code> 把 JWKS 原始密钥包成 DER SPKI；
+            <code>verifyToken(pub, token)</code> 在原始载荷字节上校验 Ed25519
+            签名（不预哈希），强制规范 base64url 重编码，并拒绝过期令牌：
+          </p>
+          <pre><code>// Canonical encodings only: re-encoding the decoded bytes
+// must reproduce the input exactly. Go's base64 decoder
+// silently discards unused low bits of a trailing character,
+// so distinct strings can decode to the same token.
+if base64.RawURLEncoding.EncodeToString(payload) != payloadPart ||
+    base64.RawURLEncoding.EncodeToString(sig) != sigPart {
+    return nil, fmt.Errorf("%w: non-canonical encoding", ErrInvalidToken)
+}</code></pre>
+          <p>
+            <code>sdk/python/mythic/verify.py</code> —— 经
+            <code>cryptography</code> 包实现相同语义：
+            <code>parse_public_key</code>、<code>verify_token</code>、
+            <code>TokenClaims</code> 数据类，任何拒绝都抛
+            <code>TokenError</code>。Python SDK 已进 CI
+            （<code>.github/workflows/sdk-python-ci.yml</code>），并跑在
+            <code>make test</code> 下 —— 此前没有任何东西自动执行它。
+          </p>
+          <p>
+            已跨语言验证并提交：<code>e2e/crosslang.sh</code> 从实时 Go 服务器
+            签发令牌，在 Go、Python、JS 三端逐一验证出一致结果
+            （<code>dec=allow risk=6</code>，三端相同）。
+          </p>
+
+          <h2>证据</h2>
+          <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>套件</th><th>结果</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>go build ./...</code> · <code>go vet ./...</code></td><td>干净</td></tr>
+              <tr><td><code>go test -race -count=1</code></td><td>7/7 个包，0 数据竞争</td></tr>
+              <tr><td><code>bun test</code> (JS SDK)</td><td>17/17</td></tr>
+              <tr><td><code>tsc --noEmit</code> · <code>bun run build</code></td><td>干净</td></tr>
+              <tr><td><code>pytest</code> (Python SDK)</td><td>6/6</td></tr>
+              <tr><td><code>e2e/crosslang.sh</code></td><td>Go、Python、JS 在一个实时令牌上达成一致</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>
+            评分契约本身被钉在代码里 —— 敌对调参无法把超范围的分值泄漏进
+            签名令牌（红队发现 H3，已回归测试）：
+          </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+// dashboards, tuning docs). Hostile tuning must clamp
+// here, not leak 500 into tokens (red-team H3).
+if score > 100 {
+    score = 100
+}
+if score &lt; 0 {
+    score = 0
+}</code></pre>
+
+          <h2>审计改变了什么</h2>
+          <p>
+            在原始"M1 完成"声明之后，一次从零开始的审计（全新克隆、每个套件
+            重跑、对验证路径做对抗性检查）发现了七处缺口。提交
+            <code>067e9f7</code>（"fix(audit): close all 7 M1 audit gaps"）
+            关闭了其中六处：
+          </p>
+          <ul>
+            <li>ASN 正向测试已补（以前只有失败模式）。</li>
+            <li>行为提示现在在 <code>verify()</code> 时发送 —— 此前采集器在挑战结束后就停了，导致服务端的 verify 阶段行为解析实际成为死代码。</li>
+            <li>Python SDK 已加入 CI 和 <code>make test</code>。</li>
+            <li>跨语言 E2E 已提交（<code>e2e/crosslang.sh</code>）。</li>
+            <li><code>docs/ROADMAP.md</code> 已修正 —— 它还把已完成的 M1 事项标为计划中。</li>
+            <li>一个误导性的 worker 测试名已修正（它声称测的是回退路径，实际测的是真实 worker 路径）。</li>
+          </ul>
+          <p>
+            第七处 —— Web Worker 的真实浏览器测试 —— 仍敞开，作为已知缺口
+            记录，而不是宣称已完成。这就是 M1 当前的诚实状态。
+          </p>
+
+          <h2>开放问题</h2>
+          <p>
+            真实浏览器 worker 覆盖是上面唯一敞开的事项。除此之外：IP 信誉源
+            仍在计划中（ROADMAP，诚实地标着），M2 行为生物特征和 M5 跨节点
+            验证共享密钥库仍是下一个里程碑。按项目规则，每个新信号的绕过
+            方式都要在信号上线前先写进文档 —— 见 ADR-0010 的"Bypasses"节。
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>

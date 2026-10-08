@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>003 — プロジェクト001：Mythic、公開へ — XEY Labs</title>
+  <title>001 — プロジェクト001：Mythic、公開へ — XEY Labs</title>
   <meta name="description" content="ログ003。ラボ初のプロジェクトが公開に：適応型ボット対策、クライアントを信頼しない、AGPL —— そして自分たちの攻撃で見つけた2つの穴。">
   <link rel="canonical" href="https://xeylabs.github.io/ja/projects/mythic/ship-public.html">
   <link rel="alternate" hreflang="en" href="https://xeylabs.github.io/projects/mythic/ship-public.html">
@@ -19,6 +19,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -52,71 +60,114 @@
         <h1>プロジェクト001：Mythic、公開へ。</h1>
         <div class="post-body">
           <p>
-            本日、ラボ初のプロジェクトがリポジトリから記録へ：
+            今日、ラボ初のプロジェクトがリポジトリから記録へ移る：
             <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
-            —— 適応型ボット対策。キャプチャが負ける時代のための代替品です。
-            AGPL-3.0、本日より完全公開。
+            —— キャプチャが負ける時代のためのキャプチャ代替として構築された
+            適応型ボット対策。本日よりAGPL-3.0で完全公開。
           </p>
 
-          <h2>選んだ問題</h2>
+          <h2>キャプチャは死んだ、その死は測定可能だ</h2>
           <p>
-            キャプチャは死にました。しかも死に方は測定可能です。ソルvingファームは
-            1,000答えを昼食より安く売る。視覚モデルは画像パズルをテキストのように
-            読む。ステルスブラウザは、捕まえるはずだったフィンガープリント検査を
-            平気で通り抜ける。静的なパズルは皆、同じ失敗モードを共有します：
-            <strong>ソルバーが一度見つかれば、永遠に殺される。</strong>
+            ソルビングファームは昼食より安い値段で千件の回答を売る。視覚モデルは
+            画像パズルをテキストのように読む。ステルスブラウザは、捕まえるはず
+            だったフィンガープリント検査を平然とすり抜ける。静的なパズルはどれも
+            同じ失敗モードを共有する：
+            <strong>ソルバーが一度発見されれば、それは永遠に殺される。</strong>
+            経済学はあらゆる局面で攻撃者に味方する —— だから私たちは、より良い
+            パズルを作るのをやめ、悪用に価格を付け始めた。
           </p>
 
-          <h2>テーゼ：クライアントを信頼しない</h2>
+          <h2>テーゼ：クライアントを決して信頼しない</h2>
           <p>
-            Mythicは、ブラウザをデフォルトで敵対的なものと仮定します。クライアント
-            から届くすべてのバイトは敵対的入力 —— だからクライアントSDKは
-            <em>センサー</em>であって、裁判官では決してない。判断はサーバー側で、
-            名前付きの監査可能な理由を出す決定論的リスクエンジンが行います。悪用の
-            価格設定は層になっています：適応型プルーフオブワークは人間ならWeb
-            Worker内で約1秒 —— ボットファームには同じコストがリクエストごとに、
-            永遠に。リスクの高いトラフィックにはより難しいチャレンジを。重要な操作
-            には暗号学的証明を要求できます。判定は短命のEd25519署名トークンとして
-            届き、バックエンドはローカルで検証 —— コールバック不要。
+            Mythicはブラウザをデフォルトで敵対的と仮定する。クライアントから届く
+            すべてのバイトは敵対的入力 —— だからクライアントSDKは
+            <em>センサー</em>であって、決して裁判官ではない。判断はサーバー側で
+            行われ、名前付きで監査可能な理由を出力する決定論的リスクエンジンが担う。
           </p>
           <p>
-            <mark>目標は一度も「突破不能」ではありません。目標は、悪用を経済的に
-            非合理にすることです。</mark>
+            悪用の価格設定は階層的だ：適応型プルーフオブワークは人間にはWeb Worker
+            内で約1秒 —— ボットファームには同じコストがリクエストごとに永遠に
+            かかる。リスクの高いトラフィックにはより難しいチャレンジを。重要な
+            操作には暗号学的証明を要求できる。判定は短命のEd25519署名トークン
+            として届き、オリジンがJWKSエンドポイントの公開鍵でローカル検証する ——
+            コールバック不要。
           </p>
 
-          <h2>まず自分たちで壊した</h2>
+          <div class="fig" role="img" aria-label="コストの非対称性：人間は約1秒を一度だけ払い、ボットファームは同じコストをすべてのリクエストで永遠に払い続ける。">
+            <svg viewBox="0 0 960 220" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">経済的な論拠</text>
+              <g font-size="12">
+                <text x="20" y="80" fill="#101210">人間</text>
+                <rect x="180" y="58" width="120" height="32" fill="#101210"/>
+                <text x="320" y="80" fill="#55584F" font-size="11">Worker内で約1秒、それで終わり</text>
+                <text x="20" y="150" fill="#101210">ボットファーム</text>
+                <rect x="180" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="312" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <rect x="444" y="128" width="120" height="32" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="600" y="150" fill="#101210" font-size="14">× N</text>
+                <text x="640" y="150" fill="#55584F" font-size="11">同じく約1秒 —— すべてのリクエストで、永遠に</text>
+              </g>
+              <text x="20" y="200" font-size="11" fill="#55584F">「突破不能」は一度も目標ではなかった。目標は、悪用を経済的に非合理にすることだ。</text>
+            </svg>
+            <p class="figcap mono">図1 —— 1秒は人間にとっては無に等しく、100万リクエストを回すファームにとってはすべてだ。</p>
+          </div>
+
+          <h2>判定はトークン、コールバックではない</h2>
           <p>
-            公開前に、自分たちで攻撃を実行しました。トークン形式への1万回の変異
+            サーバーが判断すると、リスクスコア・難易度・有効期限をEd25519で署名
+            する。オリジンはJWKSエンドポイントから取得した公開鍵でローカル検証
+            する。mythicdへのリクエストごとのコールバックも、漏洩する共有
+            シークレットもない：
+          </p>
+          <pre><code>claims, err := xtoken.VerifyToken(pub, token)
+if err != nil {
+    // reject: malformed, bad signature, or expired
+}
+// claims.Decision and claims.Risk are yours to enforce;
+// verification only proves mythicd signed these claims.</code></pre>
+          <p>
+            HTTPサーフェスは2つのエンドポイントだけ。チャレンジを入れて、証明を出す：
+          </p>
+          <pre><code>$ curl -s mythicd:8080/v1/challenge \
+    -d '{"site_key":"sk_live_..."}'
+# → {"id":"ch_01J…","difficulty":18,…}
+
+# solve the SHA-256 PoW, then:
+$ curl -s mythicd:8080/v1/verify \
+    -d '{"challenge_id":"ch_01J…","nonce":"48291033"}'
+# → decision token (or a harder challenge)</code></pre>
+
+          <h2>まず自分たちで壊そうとした</h2>
+          <p>
+            公開前に、私たちは自分たちで攻撃を実行した。トークン形式への1万変異の
             ストームは、実際の受容バグを捉えた：異なる文字列が同じ署名済みバイトに
-            デコードできる。ライブのカオスセッションは、偽造ヘッダー1つでIPごとの
-            レートリミッターを20回中20回突破できることを見つけた。両方修正済み。
-            両方とも回帰テストで固定済み。今や毎回のプッシュでファザーがCI上で
-            検証パスを磨き続けます。バイパス報告こそが最も有用な部分 ——
-            <strong>それがこのプロジェクトに報いてほしい文化です。</strong>
+            デコードされる。ライブのカオスセッションでは、偽造ヘッダー1つでIPごとの
+            レートリミッターを20回中20回突破できることが分かった。両方修正済み。
+            両方とも回帰テストで固定済み。今やファザーが毎回のプッシュでCI上の検証
+            パスを磨き続ける。バイパス報告こそ最も有用な部分だった ——
+            <strong>それが、このプロジェクトに報いてほしい文化だ。</strong>
           </p>
 
           <h2>正直、まだできないこと</h2>
           <p>
             v0は、ステルスブラウザとネイティブソルバーを持つ資金力のある運用者に
-            は負けます。脅威モデルに文章で書いてあります。答えはロードマップで
-            あって雰囲気ではありません：行動バイオメトリクス、暗号学的ステップ
-            アップ、学習エンジン。デフォルトで公開ということは、穴も公開という
-            ことです。
+            は負ける。脅威モデルに文章で書いてある。答えはロードマップであって
+            雰囲気ではない：行動バイオメトリクス、暗号学的ステップアップ、学習
+            エンジン。デフォルトで公開とは、穴も公開ということだ。
           </p>
 
           <h2>ライセンス</h2>
           <p>
             すべて —— エンジンもSDKも —— AGPL-3.0-or-later。読んで、クローンして、
-            壊してください。壊せたら、まず
+            壊してほしい。壊せたら、まず
             <a href="https://github.com/xeylabs/mythic/security/advisories/new" rel="noopener">非公開で</a>
-            教えてください。コントリビューションはリポジトリ内のCLAのもとで歓迎
-            します。
+            教えてほしい。コントリビューションはリポジトリ内のCLAのもとで歓迎する。
           </p>
 
           <p>
             プロジェクト001は稼働中。プロジェクト002はすでに待機中。
           </p>
-          <p class="post-sign">— XEY LABS、出荷の日</p>
+          <p class="post-sign">— XEY LABS、公開の日</p>
         </div>
       </article>
 

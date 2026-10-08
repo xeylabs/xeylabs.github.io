@@ -19,6 +19,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/style.css">
+  <style>
+    .post-body code { font-family: var(--font-m); font-size: .875em; background: rgba(16,18,16,.07); padding: .1em .35em; }
+    .post-body pre { background: var(--ink); color: var(--paper); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.75em 0; }
+    .post-body pre code { background: none; padding: 0; font-size: .8125rem; line-height: 1.65; color: var(--paper); }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 1.75em 0; font-size: .9375rem; }
+    .post-body th { font-family: var(--font-m); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--ink); }
+    .post-body td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .fig { margin: 2em 0; border: 1px solid var(--line); background: #FBFAF7; padding: 1.5rem; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .figcap { margin-top: 1rem; color: var(--mut); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Lewati ke konten</a>
@@ -52,67 +63,272 @@
         <h1>M1 Selesai: Sinyal Jaringan, Worker Solver, Origin SDK.</h1>
         <div class="post-body">
           <p>
-            M1 is done. Four items closed in
-            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>:
-            JA4 TLS fingerprinting, ASN-based network scoring, a packaged Web
-            Worker for proof-of-work, and origin verification helpers for
-            Node.js and Python. Commits
-            <code>bc87ed9</code> through <code>c7e4fc3</code>.
+            M1 adalah milestone di mana "adaptif" berhenti menjadi kata
+            sifat di README
+            <a href="https://github.com/xeylabs/mythic" rel="noopener"><strong>Mythic</strong></a>
+            dan menjadi mekanisme. Sampai kini server menetapkan harga
+            penyalahgunaan dengan satu instrumen — difficulty
+            proof-of-work. M1 menambahkan sinyal yang memungkinkannya
+            menetapkan harga atas <em>siapa</em> yang bertanya: fingerprint
+            TLS JA4 dan reputasi ASN masuk ke risk engine ber-capped,
+            solver PoW pindah dari main thread, dan origin bisa
+            memverifikasi vonis secara native di Node.js dan Python. Commit
+            <code>bc87ed9</code> hingga <code>c7e4fc3</code>.
+          </p>
+          <p>
+            <mark>Postingan ini direvisi setelah audit internal menemukan
+            tujuh celah dalam klaim "M1 complete" yang asli.</mark> Enam
+            sudah diperbaiki di commit <code>067e9f7</code>; satu tetap
+            jujur terbuka dan dinyatakan di bawah. Koreksinya
+            didokumentasikan di sini, bukan dikubur.
           </p>
 
-          <h2>JA4 fingerprinting (ADR-0010)</h2>
+          <h2>Mengapa sinyal — dan mengapa hanya advisory</h2>
           <p>
-            Fingerprint klien TLS membedakan browser asli dari klien HTTP
-            ter-script. Server membaca <code>X-Mythic-JA4</code> (di-set oleh
-            proxy tepercaya yang men-terminasi TLS) dan menilai fingerprint
-            terhadap pola browser yang dikenal. Nilai malformed atau hanya-prefix
-            ditolak untuk menerima diskon known-browser —
-            fingerprint yang diparrot tetap menjadi bypass terdokumentasi, jadi JA4
-            hanya advisory, dibatasi pada kontribusi risiko kecil.
+            Mitigasi bot hidup atau mati oleh sinyal, dan setiap sinyal
+            sendirian itu lemah. Fingerprint JA4 bisa ditiru byte-per-byte
+            oleh klien mana pun yang mau repot. ASN adalah heuristik —
+            datacenter hari ini, residential proxy besok. Perlakukan salah
+            satunya sebagai kebenaran mutlak dan kamu telah membangun
+            blocklist dengan langkah tambahan.
+          </p>
+          <p>
+            Maka M1 memperlakukan setiap sinyal jaringan sebagai
+            <strong>advisory</strong>: kontribusi kecil ber-capped yang
+            bisa menaikkan harga sebuah request tetapi tak pernah bisa
+            meloloskannya atau menghukumnya sendirian. Alirnya seperti ini:
           </p>
 
-          <h2>ASN scoring (ADR-0010)</h2>
+          <div class="fig" role="img" aria-label="Alir sinyal risiko: sinyal JA4, ASN, dan behavioral masuk ke risk.Input, skoring ber-capped menghasilkan skor 0 hingga 100, yang dipetakan ke allow, challenge, atau block.">
+            <svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Mono', monospace">
+              <text x="20" y="24" font-size="11" fill="#55584F" letter-spacing="2">ALIR SINYAL RISIKO</text>
+              <g font-size="12" text-anchor="middle">
+                <rect x="20" y="60" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="86" fill="#101210">fingerprint JA4</text>
+                <text x="110" y="104" font-size="10" fill="#55584F">header yang diset proxy</text>
+                <rect x="20" y="140" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="166" fill="#101210">ASN</text>
+                <text x="110" y="184" font-size="10" fill="#55584F">MaxMind lookup</text>
+                <rect x="20" y="220" width="180" height="64" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="110" y="246" fill="#101210">Behavioral</text>
+                <text x="110" y="264" font-size="10" fill="#55584F">biometrics</text>
+              </g>
+              <g stroke="#101210" stroke-width="1.5">
+                <line x1="200" y1="92" x2="300" y2="140"/><polygon points="300,140 290,134 290,146" fill="#101210"/>
+                <line x1="200" y1="172" x2="300" y2="160"/><polygon points="300,160 290,154 290,166" fill="#101210"/>
+                <line x1="200" y1="252" x2="300" y2="180"/><polygon points="300,180 290,174 290,186" fill="#101210"/>
+              </g>
+              <g font-size="12" text-anchor="middle">
+                <rect x="300" y="120" width="170" height="80" fill="#101210"/>
+                <text x="385" y="152" fill="#F4F3EE">risk.Input</text>
+                <text x="385" y="172" font-size="10" fill="#C6F531">challenge + verify</text>
+              </g>
+              <line x1="470" y1="160" x2="550" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="550,160 540,154 540,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="550" y="120" width="170" height="80" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="635" y="146" fill="#101210">skoring ber-capped</text>
+                <text x="635" y="166" font-size="11" fill="#55584F">score ∈ [0, 100]</text>
+                <text x="635" y="184" font-size="10" fill="#55584F">cap divalidasi</text>
+              </g>
+              <line x1="720" y1="160" x2="790" y2="160" stroke="#101210" stroke-width="1.5"/><polygon points="790,160 780,154 780,166" fill="#101210"/>
+              <g font-size="12" text-anchor="middle">
+                <rect x="790" y="80" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="109" fill="#101210">allow</text>
+                <rect x="790" y="136" width="150" height="48" fill="#C6F531" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="165" fill="#101210">challenge</text>
+                <rect x="790" y="192" width="150" height="48" fill="#F4F3EE" stroke="#101210" stroke-width="1.5"/>
+                <text x="865" y="221" fill="#101210">block</text>
+              </g>
+            </svg>
+            <p class="figcap mono">GBR. 1 — Setiap sinyal bersifat advisory dan ber-capped. Tidak ada satu sinyal pun yang bisa meloloskan atau menghukum request sendirian.</p>
+          </div>
+
+          <h2>JA4 fingerprinting: diskon, ber-capped, tidak dipercaya</h2>
           <p>
-            Autonomous System Numbers menambah sinyal level jaringan: ASN
-            datacenter dan hosting mendapat skor lebih tinggi dari ISP residensial. Komponen
-            <code>ASNLookup</code> baru me-resolve IP klien via
-            database MaxMind GeoLite2-ASN (<code>MYTHIC_ASN_DB</code>).
-            Path kosong berarti sinyal dinonaktifkan — valid. Path yang
-            dikonfigurasi tapi gagal dibuka menolak startup: fail-closed pada
-            miskonfigurasi, bukan degradasi diam-diam.
+            <a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0010-ja4-asn-signals.md" rel="noopener">ADR-0010</a>.
+            Server membaca fingerprint JA4 dari
+            <code>X-Mythic-JA4</code>, yang diset oleh terminating proxy —
+            tidak pernah dari klien langsung, karena nilai dari klien
+            adalah attacker-controlled. Fingerprint dicocokkan dengan pola
+            JA4 browser yang dikenal; kecocokan memberi diskon risiko
+            kecil, ber-capped sehingga tak bisa sendirian meloloskan
+            challenge. Nilai malformed dan match hanya-prefix ditolak dari
+            jalur diskon sepenuhnya
+            (<code>a8ce95a</code>). Semua cap divalidasi saat startup;
+            nilai tuning yang hostile membuat server menolak melayani
+            (<code>8f560bd</code>).
+          </p>
+          <p>
+            Batasan yang dinyatakan: JA4 bersifat advisory. Klien yang
+            meniru fingerprint browser asli byte-per-byte tak bisa
+            dibedakan di lapisan ini. Diskonnya kecil justru karena
+            sinyalnya bisa dipalsukan — ia menaikkan biaya scripting
+            naif, tidak lebih.
           </p>
 
-          <h2>Web Worker untuk PoW solving</h2>
+          <h2>ASN scoring: heuristik yang gagal tertutup</h2>
           <p>
-            Grind proof-of-work berjalan di main thread, membekukan
-            halaman pada difficulty tinggi. <code>solveInWorker()</code> mengemas
-            solver sebagai Web Worker via Blob URL — tidak perlu file worker
-            terpisah untuk di-host, bekerja dengan bundler apapun. Fallback ke
-            solving main-thread saat Worker tidak tersedia (SSR, Node).
-            <code>MythicClient</code> menggunakan worker secara default dan
-            auto-start pengumpulan behavioral saat konstruksi.
+            ADR yang sama. IP klien di-resolve ke Autonomous System Number
+            via database MaxMind GeoLite2-ASN
+            (<code>MYTHIC_ASN_DB</code>). ASN datacenter, hosting, dan
+            VPN-exit berkontribusi pada risiko; ASN ISP residensial tidak.
+            Lookup-nya nil-safe di seluruh jalur:
+            <code>MYTHIC_ASN_DB</code> yang kosong menonaktifkan sinyal
+            dengan bersih, sementara path yang dikonfigurasi tetapi gagal
+            dibuka bersifat fatal saat startup. Miskonfigurasi gagal
+            tertutup; ketiadaan mengalami degradasi diam-diam sesuai
+            desain — operator memilih untuk tidak mengaktifkannya.
+          </p>
+          <p>
+            <mark>Koreksi audit:</mark> test asli hanya mencakup mode
+            kegagalan (nil, path kosong, path buruk, IP invalid) — tidak
+            ada positive lookup yang pernah dieksekusi.
+            <code>067e9f7</code> menambahkan <code>TestASNLookupPositive</code>
+            terhadap fixture <code>.mmdb</code> sintetis yang di-generate
+            di dalam repo (bukan data MaxMind berlisensi), mem-pin happy
+            path: range datacenter ter-skor, range residensial tidak.
           </p>
 
-          <h2>Helper verifikasi origin</h2>
+          <h2>Web Worker solver: PoW keluar dari main thread</h2>
           <p>
-            Token keputusan hanya bisa diverifikasi di Go. Origin yang
-            menjalankan Node.js atau Python kini bisa memverifikasi token secara lokal dengan
-            helper baru: <code>parsePublicKey</code>/<code>verifyToken</code>
-            untuk Node, <code>parse_public_key</code>/<code>verify_token</code>
-            untuk Python. Keduanya menegakkan tanda tangan Ed25519, expiry, dan
-            encoding base64url kanonis. Terverifikasi lintas bahasa: token yang
-            di-generate server Go terverifikasi di keduanya.
+            Grind SHA-256 sebelumnya berjalan di main thread — pada
+            difficulty 24+ halaman membeku selama beberapa detik. SDK kini
+            menyertakan <code>solveInWorker()</code>, yang mengubah solver
+            yang self-contained menjadi string untuk Blob URL dan
+            menjalankannya di luar thread. Tidak ada file worker terpisah
+            untuk di-deploy; tidak perlu plugin bundler. Progress callback
+            menyala setiap 2048 iterasi;
+            <code>AbortSignal</code> mematikan worker dan mencabut URL:
+          </p>
+          <pre><code>export async function solveInWorker(
+  challenge: Challenge,
+  opts: SolveInWorkerOptions = {},
+): Promise&lt;Solution&gt; {
+  // No Worker API (Node, SSR) → fall back to main thread.
+  if (typeof Worker === "undefined") {
+    const { solve } = await import("./pow");
+    return solve(challenge, opts);
+  }
+  const workerCode = `(${workerMain.toString()})()`;
+  const blob = new Blob([workerCode], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  // …postMessage challenge, await solution, revoke URL
+}</code></pre>
+          <p>
+            <code>MythicClient</code> menerima <code>useWorker</code>
+            (default <code>true</code>) dan otomatis memulai behavioral
+            collector saat konstruksi. Satu klien, satu alur, tanpa wiring
+            manual.
+          </p>
+          <p>
+            <mark>Celah yang diketahui, dinyatakan apa adanya:</mark> jalur
+            worker hanya pernah berjalan di implementasi Worker Bun —
+            tidak pernah di Chromium, Firefox, atau Safari. Ini
+            didokumentasikan di <code>sdk/js/README.md</code>, tidak
+            diklaim sebaliknya. Suite Playwright sempat dicoba;
+            environment build tidak bisa mengambil binary browser. Sampai
+            itu berubah, perilaku browser asli belum teruji dan tidak
+            diklaim.
           </p>
 
-          <h2>Verifikasi</h2>
+          <h2>Verifikasi origin: Node.js dan Python</h2>
           <p>
-            <code>go vet</code> bersih, <code>go test ./... -race</code>
-            hijau, SDK <code>tsc --noEmit</code> dan <code>bun test</code>
-            hijau (15 test), Python <code>pytest</code> hijau (6 test).
-            Setiap sinyal baru mendokumentasikan bypass-nya terlebih dahulu, sesuai
-            aturan proyek. Yang tersisa: M2 (behavioral biometrics, menutup
-            celah delay-attack) dan M5 (shared keystore untuk verifikasi
-            multi-node).
+            Token keputusan hanya bisa diverifikasi di Go
+            (<code>server/xtoken</code>). Origin kini mendapat helper
+            native. <code>sdk/js/src/verify.ts</code> —
+            <code>parsePublicKey(x)</code> membungkus kunci mentah JWKS ke
+            DER SPKI; <code>verifyToken(pub, token)</code> memeriksa tanda
+            tangan Ed25519 atas byte payload mentah (tanpa pre-hash),
+            menegakkan re-encoding base64url kanonis, dan menolak token
+            kedaluwarsa:
+          </p>
+          <pre><code>// Canonical encodings only: re-encoding the decoded bytes
+// must reproduce the input exactly. Go's base64 decoder
+// silently discards unused low bits of a trailing character,
+// so distinct strings can decode to the same token.
+if base64.RawURLEncoding.EncodeToString(payload) != payloadPart ||
+    base64.RawURLEncoding.EncodeToString(sig) != sigPart {
+    return nil, fmt.Errorf("%w: non-canonical encoding", ErrInvalidToken)
+}</code></pre>
+          <p>
+            <code>sdk/python/mythic/verify.py</code> — semantik yang sama
+            lewat paket <code>cryptography</code>:
+            <code>parse_public_key</code>, <code>verify_token</code>,
+            dataclass <code>TokenClaims</code>, <code>TokenError</code>
+            pada setiap penolakan. Python SDK kini di CI
+            (<code>.github/workflows/sdk-python-ci.yml</code>) dan berjalan
+            di bawah <code>make test</code> — sebelumnya tidak ada yang
+            mengeksekusinya otomatis.
+          </p>
+          <p>
+            Terverifikasi lintas bahasa dan di-commit:
+            <code>e2e/crosslang.sh</code> membuat token dari server Go yang
+            hidup dan memverifikasinya secara identik di Go, Python, dan
+            JS (<code>dec=allow risk=6</code> di ketiganya).
+          </p>
+
+          <h2>Bukti</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Paket uji</th><th>Hasil</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>go build ./...</code> · <code>go vet ./...</code></td><td>bersih</td></tr>
+                <tr><td><code>go test -race -count=1</code></td><td>7/7 paket, 0 data race</td></tr>
+                <tr><td><code>bun test</code> (JS SDK)</td><td>17/17</td></tr>
+                <tr><td><code>tsc --noEmit</code> · <code>bun run build</code></td><td>bersih</td></tr>
+                <tr><td><code>pytest</code> (Python SDK)</td><td>6/6</td></tr>
+                <tr><td><code>e2e/crosslang.sh</code></td><td>Go, Python, JS sepakat pada token live</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Contract scoring-nya sendiri di-pin di kode — tuning hostile
+            tidak bisa membocorkan skor di luar rentang ke dalam token
+            bertanda tangan (temuan red-team H3, di-regression-test):
+          </p>
+          <pre><code>// The score is a 0-100 contract (token claim `risk`,
+// dashboards, tuning docs). Hostile tuning must clamp
+// here, not leak 500 into tokens (red-team H3).
+if score > 100 {
+    score = 100
+}
+if score &lt; 0 {
+    score = 0
+}</code></pre>
+
+          <h2>Apa yang diubah audit</h2>
+          <p>
+            Setelah klaim "M1 complete" yang asli, audit dari nol (fresh
+            clone, setiap suite di-run ulang, adversarial pass atas jalur
+            verify) menemukan tujuh celah. Commit
+            <code>067e9f7</code> ("fix(audit): close all 7 M1 audit gaps")
+            menutup enam di antaranya:
+          </p>
+          <ul>
+            <li>Test positif ASN ditambahkan (sebelumnya hanya mode kegagalan).</li>
+            <li>Hint behavioral kini dikirim di <code>verify()</code> — sebelumnya collector berhenti setelah challenge, membuat parsing behavioral tahap-verify di server sebagai dead code dalam praktik.</li>
+            <li>Python SDK ditambahkan ke CI dan <code>make test</code>.</li>
+            <li>E2E lintas bahasa di-commit (<code>e2e/crosslang.sh</code>).</li>
+            <li><code>docs/ROADMAP.md</code> dikoreksi — ia masih menandai item M1 yang sudah selesai sebagai direncanakan.</li>
+            <li>Nama test worker yang menyesatkan diperbaiki (ia mengklaim mengetes fallback padahal mengetes jalur worker asli).</li>
+          </ul>
+          <p>
+            Yang ketujuh — test browser asli untuk Web Worker — tetap
+            terbuka dan didokumentasikan sebagai celah yang diketahui,
+            bukan diklaim selesai. Itulah keadaan M1 yang jujur saat ini.
+          </p>
+
+          <h2>Pertanyaan terbuka</h2>
+          <p>
+            Cakupan worker browser asli adalah satu item terbuka di atas.
+            Selain itu: feed reputasi IP masih direncanakan (ROADMAP,
+            ditandai jujur), dan M2 behavioral biometrics plus M5 shared
+            keystore untuk verifikasi lintas node tetap menjadi milestone
+            berikutnya. Sesuai aturan proyek, bypass setiap sinyal baru
+            didokumentasikan sebelum sinyalnya dikirim — lihat ADR-0010 §
+            "Bypasses".
           </p>
           <p class="post-sign">— XEY LABS</p>
         </div>
