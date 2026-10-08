@@ -173,7 +173,7 @@
                         <tr>
                           <td>IPv6プレッシャーキー</td>
                           <td>リミッターはIPv6を/128でキー化 —— 1つの/64が2⁶⁴のIDを支配した（単一ブロックから5,000リクエスト、ヒットゼロ）。</td>
-                          <td>カウンタはIPv6を/64に集約する（ADR-0007）。</td>
+                          <td>カウンタはIPv6を/64に集約する（<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>）。</td>
                         </tr>
                         <tr>
                           <td>接続タイムアウト</td>
@@ -184,7 +184,7 @@
                         <tr>
                           <td>ソルブ時間フロア</td>
                           <td>フロアは50k H/sのワーカーをモデル化；実測の <code>crypto.subtle</code> ワーカーは約400k H/s —— 誠実なクライアントが非現実的と判定された。</td>
-                          <td>フロアは誠実なソルブ時間の低い分位数になった（<code>2^d / (2M × 32)</code>）：最悪でも誤検出 ≤ ~6%、GPU級の回答は約96%で引っかかる（ADR-0008）。</td>
+                          <td>フロアは誠実なソルブ時間の低い分位数になった（<code>2^d / (2M × 32)</code>）：最悪でも誤検出 ≤ ~6%、GPU級の回答は約96%で引っかかる（<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>）。</td>
                         </tr>
                         <tr>
                           <td>検証の遅延</td>

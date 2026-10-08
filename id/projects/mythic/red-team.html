@@ -177,7 +177,7 @@
                         <tr>
                           <td>Kunci tekanan IPv6</td>
                           <td>Limiter mengunci IPv6 di /128 — satu /64 mengendalikan 2⁶⁴ identitas (5.000 request dari satu blok, nol tersentuh).</td>
-                          <td>Counter kini mengagregasi IPv6 ke /64 (ADR-0007).</td>
+                          <td>Counter kini mengagregasi IPv6 ke /64 (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).</td>
                         </tr>
                         <tr>
                           <td>Timeout koneksi</td>
@@ -188,7 +188,7 @@
                         <tr>
                           <td>Floor solve-time</td>
                           <td>Floor memodelkan worker 50rb H/s; worker <code>crypto.subtle</code> terukur ~400rb H/s — klien jujur ditandai implausible.</td>
-                          <td>Floor kini kuantil rendah dari waktu solve jujur (<code>2^d / (2M × 32)</code>): false positive ≤ ~6% kasus terburuk, jawaban kelas GPU memicunya ~96% (ADR-0008).</td>
+                          <td>Floor kini kuantil rendah dari waktu solve jujur (<code>2^d / (2M × 32)</code>): false positive ≤ ~6% kasus terburuk, jawaban kelas GPU memicunya ~96% (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>).</td>
                         </tr>
                         <tr>
                           <td>Verifikasi tertunda</td>

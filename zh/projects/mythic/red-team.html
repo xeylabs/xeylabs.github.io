@@ -165,7 +165,7 @@
                         <tr>
                           <td>IPv6 压力键</td>
                           <td>限流器按 /128 键控 IPv6 —— 一个 /64 控制了 2⁶⁴ 个身份（单个网段 5,000 请求，零命中）。</td>
-                          <td>计数器按 /64 聚合 IPv6（ADR-0007）。</td>
+                          <td>计数器按 /64 聚合 IPv6（<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>）。</td>
                         </tr>
                         <tr>
                           <td>连接超时</td>
@@ -176,7 +176,7 @@
                         <tr>
                           <td>求解时间下限</td>
                           <td>下限按 50k H/s 的 worker 建模；实测 <code>crypto.subtle</code> worker 约 400k H/s —— 诚实客户端被误判。</td>
-                          <td>下限现为诚实求解时间的低分位数（<code>2^d / (2M × 32)</code>）：最坏情况误报 ≤ ~6%，GPU 级答案约 96% 触发（ADR-0008）。</td>
+                          <td>下限现为诚实求解时间的低分位数（<code>2^d / (2M × 32)</code>）：最坏情况误报 ≤ ~6%，GPU 级答案约 96% 触发（<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>）。</td>
                         </tr>
                         <tr>
                           <td>延迟验证</td>

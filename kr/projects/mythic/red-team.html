@@ -170,7 +170,7 @@
                         <tr>
                           <td>IPv6 프레셔 키</td>
                           <td>리미터가 IPv6를 /128로 키잉했다 —— 하나의 /64가 2⁶⁴개의 신원을 장악했다 (단일 블록에서 5,000 요청, 히트 제로).</td>
-                          <td>카운터는 IPv6를 /64로 집계한다 (ADR-0007).</td>
+                          <td>카운터는 IPv6를 /64로 집계한다 (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0007-ipv6-slash64-pressure-key.md" rel="noopener">ADR-0007</a>).</td>
                         </tr>
                         <tr>
                           <td>연결 타임아웃</td>
@@ -181,7 +181,7 @@
                         <tr>
                           <td>솔브 시간 플로어</td>
                           <td>플로어는 50k H/s 워커를 모델링했다; 실측 <code>crypto.subtle</code> 워커는 약 400k H/s —— 정직한 클라이언트가 비현실적이라고 판정됐다.</td>
-                          <td>플로어는 이제 정직한 솔브 시간의 낮은 분위수다 (<code>2^d / (2M × 32)</code>): 최악의 경우 오탐 ≤ ~6%, GPU급 답안은 약 96% 걸린다 (ADR-0008).</td>
+                          <td>플로어는 이제 정직한 솔브 시간의 낮은 분위수다 (<code>2^d / (2M × 32)</code>): 최악의 경우 오탐 ≤ ~6%, GPU급 답안은 약 96% 걸린다 (<a href="https://github.com/xeylabs/mythic/blob/main/docs/adr/0008-quantile-solve-time-floor.md" rel="noopener">ADR-0008</a>).</td>
                         </tr>
                         <tr>
                           <td>지연된 검증</td>
